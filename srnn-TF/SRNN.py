@@ -63,6 +63,8 @@ class SRNN(object):
 
 
 
+    def train_model(self,trX_shared_1, trX_1, trY_1, trX_shared_2, trX_2, trY_2, snapshot_rate=1,
+                    path=None, epochs=30, batch_size=50, learning_rate_decay=0.97, decay_after=10):
 
-
+        # do the training loop for the number of epochs given by epochs
 
