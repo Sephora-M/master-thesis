@@ -2,6 +2,8 @@ import tensorflow as tf
 
 class SRNN(object):
 
+    # SharedRNN(shared_layers, human_layers, object_layers, softmax_loss, trY_1, trY_2, 1e-3)
+
     def __int__(self,edgeRNNs,nodeRNNs,outputLayer,nodeToEdgeConnections,edgeListComplete,cost,
                 nodeLabels,learning_rate,clipnorm=0.0,update_type='rsm_prop',weight_decay=0.0, train_for='detection'):
         """

@@ -7,13 +7,16 @@ import cPickle
 def jointModel(num_sub_activities, num_affordances, inputJointFeatures,
                inputHumanFeatures, inputObjectFeatures):
 
-    shared_input_layer = TemporalInputＦｅａｔｕｒｅｓ（）
+    shared_input_layer = TemporalInputFeatures(inputJointFeatures)
     shared_hidden_layer = tf.nn.rnn_cell.LSTMCell(128)
-    shared_layers ＝【shared_input_layer, shared_hidden_layer】
+
+    shared_layers = [shared_input_layer, shared_hidden_layer]
+
     human_layers = [ConcatenateFeatures(inputHumanFeatures), tf.nn.rnn_cell.LSTMCell(256),
-                    softmax(num_sub_activities, softmax_init, rng=rng)]
-    object_layers = [ConcatenateFeatures(inputObjectFeatures), LSTM('tanh', 'sigmoid', lstm_init, 4, 256, rng=rng),
-                     softmax(num_affordances, softmax_init, rng=rng)]
+                    'softmax']
+
+    object_layers = [ConcatenateFeatures(inputObjectFeatures), tf.nn.rnn_cell.LSTMCell(256),
+                     'softmax']
 
     trY_1 = T.lmatrix()
     trY_2 = T.lmatrix()
