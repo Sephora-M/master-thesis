@@ -5,7 +5,7 @@ class SRNN_model(object):
 
     # SharedRNN(shared_layers, human_layers, object_layers, softmax_loss, trY_1, trY_2, 1e-3)
 
-    def __init__(self, num_classes, num_frames , num_units, max_gradient_norm, batch_size, learning_rate,
+    def __init__(self, num_classes, num_frames , num_features, num_units, max_gradient_norm, batch_size, learning_rate,
                  learning_rate_decay_factor, adam_epsilon,  GD, forward_only=False, l2_regularization=False, weight_decay=0):
         """"
         Create S-RNN model
@@ -26,8 +26,7 @@ class SRNN_model(object):
         """
 
         self.batch_size = batch_size
-        self.num_features = 5
-        num_frames = num_frames
+        self.num_features = num_features
         self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
         self.learning_rate_decay_op = self.learning_rate.assign(
             self.learning_rate * learning_rate_decay_factor)
@@ -120,7 +119,7 @@ class SRNN_model(object):
 
             clipped_grads, norm = tf.clip_by_global_norm(tf.gradients(self.cost,tvars), self.max_grad_norm)
             self.gradients_norm = norm
-            self.updates = optimizer.apply_gradients(zip(clipped_grads, tvars),global_step=tf.contrib.framework.get_or_create_global_step())
+            self.updates = optimizer.apply_gradients(zip(clipped_grads, tvars), global_step=self.global_step)
 
         self.saver = tf.train.Saver(tf.all_variables(), max_to_keep=2)
 
@@ -128,19 +127,19 @@ class SRNN_model(object):
         input_feed = {}
         #print(st_inputs)
         for temp_features_name in self.temp_features_names:
-            input_feed[self.inputs[temp_features_name].name] = temp_inputs[0][temp_features_name]
+            input_feed[self.inputs[temp_features_name].name] = temp_inputs[temp_features_name]
 
         for st_features_name in self.st_features_names:
             #print(st_features_name)
             #print(st_inputs[0][st_features_name].shape)
-            input_feed[ self.inputs[st_features_name].name] = st_inputs[0][st_features_name]
+            input_feed[ self.inputs[st_features_name].name] = st_inputs[st_features_name]
 
-        input_feed['targets'] = targets
+        input_feed[self.targets.name] = targets
 
         if not forward_only:
             output_feed = [self.updates, self.gradients_norm, self.cost]
         else:
-            output_feed = [self.cost, self.logits]
+            output_feed = [self.cost, tf.nn.softmax(self.logits)]
 
         outputs = session.run(output_feed, input_feed)
 
@@ -148,6 +147,6 @@ class SRNN_model(object):
         if not forward_only:
             return outputs[1], outputs[2], None # returs gradients norm and cost and no output
         else:
-            return outputs[0]
+            return None, outputs[0], outputs[1]  # no gradients, cost and output
 
 
