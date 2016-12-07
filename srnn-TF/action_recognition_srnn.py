@@ -71,7 +71,7 @@ def extract_features(file_name, get_train_data=True, get_valid_data=False, get_t
         return test_data
 
 def randomSample():
-    temp_features_names = ['face-face','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg','belly-belly']
+    temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
     st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
                              'belly-rightLeg','belly-leftLeg']
     temp_features = {}
@@ -89,7 +89,7 @@ def randomSample():
 
 
 def synthetic_data(train_size, valid_size, test_size,num_frames,num_features):
-    temp_features_names = ['face-face','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg','belly-belly']
+    temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
     st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
                              'belly-rightLeg','belly-leftLeg']
 

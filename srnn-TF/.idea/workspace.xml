@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="707a6e8b-15fc-48f5-bed0-b834e1b670e2" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SRNN.py" afterPath="$PROJECT_DIR$/SRNN.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/action_recognition_srnn.py" afterPath="$PROJECT_DIR$/action_recognition_srnn.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/results.txt" afterPath="$PROJECT_DIR$/models/results.txt" />
     </list>
     <ignored path="srnn-TF.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -27,8 +27,8 @@
       <file leaf-file-name="action_recognition_srnn.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/action_recognition_srnn.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="314">
-              <caret line="271" column="11" selection-start-line="271" selection-start-column="11" selection-end-line="271" selection-end-column="11" />
+            <state relative-caret-position="561">
+              <caret line="99" column="17" selection-start-line="99" selection-start-column="17" selection-end-line="99" selection-end-column="17" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -46,13 +46,25 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="SRNN.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="SRNN.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SRNN.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="572">
-              <caret line="141" column="44" selection-start-line="141" selection-start-column="44" selection-end-line="141" selection-end-column="44" />
+            <state relative-caret-position="400">
+              <caret line="39" column="8" selection-start-line="39" selection-start-column="8" selection-end-line="40" selection-end-column="62" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="read_data.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/read_data.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="374">
+              <caret line="43" column="64" selection-start-line="43" selection-start-column="64" selection-end-line="43" selection-end-column="64" />
+              <folding>
+                <element signature="e#0#28#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -77,13 +89,14 @@
         <option value="$PROJECT_DIR$/action-recognition-srnn-model.py" />
         <option value="$PROJECT_DIR$/action_recognition_srnn.py" />
         <option value="$PROJECT_DIR$/SRNN.py" />
+        <option value="$PROJECT_DIR$/read_data.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="65" />
+    <option name="x" value="73" />
     <option name="y" value="52" />
-    <option name="width" value="1788" />
+    <option name="width" value="1018" />
     <option name="height" value="1148" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
@@ -310,10 +323,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="52" width="1788" height="1148" extended-state="4" />
+    <frame x="73" y="52" width="1018" height="1148" extended-state="4" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.66939145" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29306722" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.14312267" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32992566" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -570,22 +583,32 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/action_recognition_srnn.py">
+    <entry file="file://$PROJECT_DIR$/SRNN.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="314">
-          <caret line="271" column="11" selection-start-line="271" selection-start-column="11" selection-end-line="271" selection-end-column="11" />
+        <state relative-caret-position="400">
+          <caret line="39" column="8" selection-start-line="39" selection-start-column="8" selection-end-line="40" selection-end-column="62" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/SRNN.py">
+    <entry file="file://$PROJECT_DIR$/action_recognition_srnn.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="572">
-          <caret line="141" column="44" selection-start-line="141" selection-start-column="44" selection-end-line="141" selection-end-column="44" />
+        <state relative-caret-position="561">
+          <caret line="99" column="17" selection-start-line="99" selection-start-column="17" selection-end-line="99" selection-end-column="17" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/read_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="43" column="64" selection-start-line="43" selection-start-column="64" selection-end-line="43" selection-end-column="64" />
+          <folding>
+            <element signature="e#0#28#0" expanded="true" />
           </folding>
         </state>
       </provider>

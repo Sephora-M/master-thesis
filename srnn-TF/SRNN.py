@@ -36,7 +36,7 @@ class SRNN_model(object):
         self.GD = GD
         self.weight_decay = weight_decay
 
-        self.temp_features_names = ['face-face','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg','belly-belly']
+        self.temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
         self.st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
                              'belly-rightLeg','belly-leftLeg']
         nodes_names = {'face','arms','legs','belly'}
@@ -125,13 +125,10 @@ class SRNN_model(object):
 
     def step(self,session,temp_inputs, st_inputs, targets, forward_only):
         input_feed = {}
-        #print(st_inputs)
         for temp_features_name in self.temp_features_names:
             input_feed[self.inputs[temp_features_name].name] = temp_inputs[temp_features_name]
 
         for st_features_name in self.st_features_names:
-            #print(st_features_name)
-            #print(st_inputs[0][st_features_name].shape)
             input_feed[ self.inputs[st_features_name].name] = st_inputs[st_features_name]
 
         input_feed[self.targets.name] = targets
