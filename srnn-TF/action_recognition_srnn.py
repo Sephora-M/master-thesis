@@ -56,7 +56,7 @@ tf.app.flags.DEFINE_boolean("test_model", False,
 
 FLAGS = tf.app.flags.FLAGS
 
-def extract_features(dir_name='/local/home/msephora/master-thesis/master-thesis/data/annotations/JHMDB/joint_positions',
+def extract_features(dir_name='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/joint_positions',
                      sub_activities=True, MSRdata=False,validation_proportion=0.30,num_frames=FLAGS.num_frames, normalized=FLAGS.normalized):
 
     # if not get_train_data ^ get_valid_data ^ get_test_data or get_train_data & get_valid_data & get_test_data:
@@ -200,15 +200,19 @@ def main(_):
             result_file.write("Training on MSR Action 3D data using 40 frames")
     else:
         if FLAGS.num_frames == 10:
-            data = pickle.load( open( "dataJHM_norm_10f.pkl", "rb" ) )
+            data = pickle.load( open( "split1_10f", "rb" ) )
             print("Training on JHMDB data using 10 frames ")
             result_file.write("Training on JHMDB data using 10 frames")
         elif FLAGS.num_frames == 20:
-            data = pickle.load( open( "dataJHM_norm_20f.pkl", "rb" ) )
+            data = pickle.load( open( "split1_20f", "rb" ) )
             print("Training on JHMDB data using 20 frames ")
             result_file.write("Training on JHMDB data using 20 frames")
+        elif FLAGS.num_frames == 30:
+            data = pickle.load( open( "split1_30f", "rb" ) )
+            print("Training on JHMDB data using 30 frames ")
+            result_file.write("Training on JHMDB data using 30 frames")
         elif FLAGS.num_frames == 40:
-            data = pickle.load( open( "dataJHM_norm_40f.pkl", "rb" ) )
+            data = pickle.load( open( "split1_40f", "rb" ) )
             print("Training on JHMDB data using 40 frames ")
             result_file.write("Training on JHMDB data using 40 frames")
 

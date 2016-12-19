@@ -4,8 +4,28 @@ import os
 import numpy as np
 
 
-def get_pos_imgs(joint_positions_path='/local/home/msephora/master-thesis/master-thesis/data/annotations/JHMDB/joint_positions',
-                 sub_activities=True, validation_proportion=0.20, normalized=False):
+def get_splits(splits_path='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1):
+    train = np.array([],dtype=str)
+    test = np.array([],dtype=str)
+
+    ind_split = str(ind_split) + '.txt'
+    splits_dic = {1 : train, 2: test}
+    all_splits = os.listdir(splits_path)
+    for splits in all_splits:
+        if splits.strip().split('_')[-1] == ind_split:
+            file = open(os.path.join(splits_path,splits))
+            for line in file:
+                type = line.strip().split(' ')
+                name = type[0].split('.')[0]
+                if len(name)>30:
+                    name = name[0:22]+name[-8:]
+                split = int(type[1])
+                splits_dic[split] = np.append(splits_dic[split], name)
+            file.close()
+    return splits_dic
+
+def get_pos_imgs(joint_positions_path='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/joint_positions',
+                 sub_activities=True, validation_proportion=0.20, normalized=False, ind_split=1):
     if sub_activities:
         actions = ['catch', 'climb_stairs', 'golf', 'jump', 'kick_ball', 'pick',
                'pullup', 'push', 'run', 'shoot_ball',
@@ -15,6 +35,8 @@ def get_pos_imgs(joint_positions_path='/local/home/msephora/master-thesis/master
                'pour', 'pullup', 'push', 'run', 'shoot_ball', 'shoot_bow', 'shoot_gun', 'sit', 'stand',
                'swing_baseball', 'throw', 'walk', 'wave']
 
+    splits = get_splits(ind_split=ind_split)
+    print(splits)
     train_data = {}
     train_data_size=0
     valid_data = {}
@@ -27,13 +49,14 @@ def get_pos_imgs(joint_positions_path='/local/home/msephora/master-thesis/master
             mat_path = os.path.join(joint_positions_path,actions[i],video,'joint_positions.mat')
             if os.path.isfile(mat_path):
                 joint = loadmat(os.path.join(joint_positions_path, actions[i], video,'joint_positions.mat'))
-                if np.random.random() > validation_proportion:
+                print(video)
+                if video in splits[1]: #np.random.random() > validation_proportion:
                     train_data_size += 1
                     if normalized:
                         train_pos_imgs[video] = joint['pos_world'][:,[2,1,11,12,13,14],:]
                     else:
                         train_pos_imgs[video] = joint['pos_img'][:,[2,1,11,12,13,14],:]
-                else:
+                elif video in splits[2]:
                     valid_data_size += 1
                     if normalized:
                         valid_pos_imgs[video] = joint['pos_world'][:,[2,1,11,12,13,14],:]
