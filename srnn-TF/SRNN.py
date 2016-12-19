@@ -122,7 +122,7 @@ class SRNN_model(object):
             self.gradients_norm = norm
             self.updates = optimizer.apply_gradients(zip(clipped_grads, tvars), global_step=self.global_step)
 
-        self.saver = tf.train.Saver(tf.all_variables(), max_to_keep=2)
+        self.saver = tf.train.Saver(tf.all_variables(), max_to_keep=1)
 
     def step(self,session,temp_inputs, st_inputs, targets, forward_only):
         input_feed = {}
