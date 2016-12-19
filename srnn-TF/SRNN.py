@@ -1,11 +1,11 @@
 import tensorflow as tf
-from tensorflow.python.ops import rnn, rnn_cell
+import numpy as np
 
 class SRNN_model(object):
 
     # SharedRNN(shared_layers, human_layers, object_layers, softmax_loss, trY_1, trY_2, 1e-3)
 
-    def __init__(self, num_classes, num_frames , num_features, num_units, max_gradient_norm, batch_size, learning_rate,
+    def __init__(self, num_classes, num_frames , num_temp_features, num_st_features, num_units, max_gradient_norm, batch_size, learning_rate,
                  learning_rate_decay_factor, adam_epsilon,  GD, forward_only=False, l2_regularization=False, weight_decay=0):
         """"
         Create S-RNN model
@@ -26,7 +26,9 @@ class SRNN_model(object):
         """
 
         self.batch_size = batch_size
-        self.num_features = num_features
+        self.num_classes = num_classes
+        self.num_temp_features = num_temp_features
+        self.num_st_features = num_st_features
         self.learning_rate = tf.Variable(float(learning_rate), trainable=False)
         self.learning_rate_decay_op = self.learning_rate.assign(
             self.learning_rate * learning_rate_decay_factor)
@@ -47,26 +49,26 @@ class SRNN_model(object):
         self.targets = tf.placeholder(tf.float32, shape=(None,num_classes), name='targets')
 
         for temp_feat in self.temp_features_names:
-            self.inputs[temp_feat] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_features), name=temp_feat)
+            self.inputs[temp_feat] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_temp_features), name=temp_feat)
             edgesRNN[temp_feat] = tf.nn.rnn_cell.LSTMCell(num_units)
-            states[temp_feat] = edgesRNN[temp_feat].zero_state(batch_size,tf.float32)
+            states[temp_feat] = edgesRNN[temp_feat].zero_state(self.batch_size,tf.float32)
 
         for st_feat in self.st_features_names:
-            self.inputs[st_feat] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_features), name=st_feat)
+            self.inputs[st_feat] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_st_features), name=st_feat)
             edgesRNN[st_feat] = tf.nn.rnn_cell.LSTMCell(num_units)
-            states[st_feat] = edgesRNN[st_feat].zero_state(batch_size,tf.float32)
+            states[st_feat] = edgesRNN[st_feat].zero_state(self.batch_size,tf.float32)
 
         for node in nodes_names:
-            self.inputs[node] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_features), name=node)
+            self.inputs[node] = tf.placeholder(tf.float32, shape=(None,num_frames, None), name=node)
             nodesRNN[node] = tf.nn.rnn_cell.LSTMCell(num_units)
-            states[node] = nodesRNN[node].zero_state(batch_size, tf.float32)
+            states[node] = nodesRNN[node].zero_state(self.batch_size, tf.float32)
 
         weights = {'out' : tf.Variable(tf.random_normal([num_units*num_frames,num_classes]))}
         biases = {'out' : tf.Variable(tf.random_normal([num_classes]))}
 
 
         fullbodyRNN = tf.nn.rnn_cell.LSTMCell(num_units)
-        states['fullbody'] = fullbodyRNN.zero_state(batch_size, tf.float32)
+        states['fullbody'] = fullbodyRNN.zero_state(self.batch_size, tf.float32)
 
         outputs = {}
         final_outputs = []
@@ -76,7 +78,6 @@ class SRNN_model(object):
 
         # connect the edgesRNN to the corresponding nodeRNN
         with tf.variable_scope("SRNN"):
-            #TODO: proceed in batches!
             for time_step in range(num_frames):
                 if time_step > 0: tf.get_variable_scope().reuse_variables()
                 for temp_feat in self.temp_features_names:
@@ -146,4 +147,43 @@ class SRNN_model(object):
         else:
             return None, outputs[0], outputs[1]  # no gradients, cost and output
 
+
+    def steps(self, session, all_data):
+        size = len(all_data[2])
+        num_batches = size/self.batch_size
+
+        batch_losses= np.zeros(num_batches)
+        batch_outputs= np.zeros((num_batches, self.batch_size, self.num_classes))
+        missclassified = 0.0
+        for i in range(num_batches):
+            batch = self.get_batch(all_data,i)
+            _,batch_losses[i],batch_outputs[i] = self.step(session,batch[0],batch[1],batch[2],True)
+            classes = np.argmax(batch_outputs[i],1)
+            for d in range(self.batch_size):
+                if batch[2][d][classes[d]] != 1:
+                    missclassified += 1
+        error = missclassified / (num_batches*self.batch_size)
+        return np.mean(batch_losses), error
+
+
+
+    def get_batch(self, data, batch_id):
+
+        batch = np.array({})
+        idxs = range((batch_id * self.batch_size - self.batch_size),(batch_id * self.batch_size))
+
+        batch_dic = np.array([{},{},[]])
+
+        for i in xrange(len(data)):
+            dic = data[i]
+            if i<2:
+                batch_sub_dic = {}
+                for key in dic:
+                    batch_sub_dic[key]=dic[key][idxs]
+                batch_dic[i] = batch_sub_dic
+            else:
+                batch_dic[i] = dic[idxs]
+        batch = np.append(batch,batch_dic)
+        batch = np.delete(batch,0)
+        return batch
 
