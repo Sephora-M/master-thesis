@@ -37,6 +37,7 @@ tf.app.flags.DEFINE_string("data", "JHMDB", "Data file name")
 tf.app.flags.DEFINE_boolean("normalized", True, "Normalized raw joint positionsn")
 tf.app.flags.DEFINE_boolean("GD", True, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "models", "Training directory.")
+tf.app.flags.DEFINE_string("gpu", "/gpu:2", "GPU to run ")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
@@ -222,140 +223,140 @@ def main(_):
 
     steps_per_epoch = int(train_data_size/FLAGS.batch_size)
 
+    with tf.device(FLAGS.gpu):
+        with tf.Session() as sess:
+            with tf.name_scope("Train"):
+                result_file.write("Creating SRNN model \n")
+                #initializer = tf.random_uniform_initializer(-0.05,0.05)
+                with tf.variable_scope("Model", reuse=None) : #, initializer=initializer):
+                    print("Creating SRNN model ")
+                    print("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
+                    result_file.write("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
+                    model = create_SRNN_model(sess,False,result_file)
 
-    with tf.Session() as sess:
-        with tf.name_scope("Train"):
-            result_file.write("Creating SRNN model \n")
-            #initializer = tf.random_uniform_initializer(-0.05,0.05)
-            with tf.variable_scope("Model", reuse=None) : #, initializer=initializer):
-                print("Creating SRNN model ")
-                print("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
-                result_file.write("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
-                model = create_SRNN_model(sess,False,result_file)
 
 
+                    if FLAGS.max_train_data_size:
+                        train_data = train_data[:FLAGS.max_train_data_size]
+                    if FLAGS.max_valid_data_size:
+                        valid_data = valid_data[:FLAGS.max_valid_data_size]
+                    # if FLAGS.max_test_data_size:
+                    #     test_data = test_data[:FLAGS.max_test_data_size]
 
-                if FLAGS.max_train_data_size:
-                    train_data = train_data[:FLAGS.max_train_data_size]
-                if FLAGS.max_valid_data_size:
-                    valid_data = valid_data[:FLAGS.max_valid_data_size]
-                # if FLAGS.max_test_data_size:
-                #     test_data = test_data[:FLAGS.max_test_data_size]
+                    checkpoint_path = FLAGS.train_dir + "/srnn_model.ckpt"
 
-                checkpoint_path = FLAGS.train_dir + "/srnn_model.ckpt"
+                    step_time, ckpt_loss,epoch_loss = 0.0, 0.0,0.0
+                    current_step = 0
+                    current_epoch = divmod(model.global_step.eval(),steps_per_epoch)[0]
 
-                step_time, ckpt_loss,epoch_loss = 0.0, 0.0,0.0
-                current_step = 0
-                current_epoch = divmod(model.global_step.eval(),steps_per_epoch)[0]
+                    result_file.write(
+                    " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
+                    print(
+                    " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
+                    previous_losses,previous_train_loss, previous_eval_loss = [],[],[]
+                    best_train_loss, best_val_loss = np.inf, np.inf
+                    best_val_epoch = -1
+                    train_batch_id = 1
 
-                result_file.write(
-                " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
-                print(
-                " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
-                previous_losses,previous_train_loss, previous_eval_loss = [],[],[]
-                best_train_loss, best_val_loss = np.inf, np.inf
-                best_val_epoch = -1
-                train_batch_id = 1
+                    while int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
+                        start_time = time.time()
+                        batch = get_random_batch(train_data,FLAGS.batch_size)
+                        temp_input_batch = batch[0]
+                        st_input_batch = batch[1]
+                        target_batch = batch[-1]
+                        _ , step_loss, _ = model.step(sess,temp_input_batch, st_input_batch, target_batch, False)
 
-                while int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
-                    start_time = time.time()
-                    batch = get_random_batch(train_data,FLAGS.batch_size)
-                    temp_input_batch = batch[0]
-                    st_input_batch = batch[1]
-                    target_batch = batch[-1]
-                    _ , step_loss, _ = model.step(sess,temp_input_batch, st_input_batch, target_batch, False)
+                        step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
+                        ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
+                        epoch_loss += step_loss/steps_per_epoch
 
-                    step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
-                    ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
-                    epoch_loss += step_loss/steps_per_epoch
+                        current_step += 1
+                        train_batch_id += 1
+                        if current_step % FLAGS.steps_per_checkpoint == 0:
+                            # Print statiistics for the previous epoch
+                            print ("batch no %d epoch %d" % (train_batch_id,current_epoch))
+                            print ("global step %d learning rate %.4f step-time %.3f loss %.4f "
+                                   % (model.global_step.eval(), model.learning_rate.eval(),
+                                      step_time, ckpt_loss))
+                            result_file.write("global step %d learning rate %.4f step-time %.3f loss %.4f \n"
+                                   % (model.global_step.eval(), model.learning_rate.eval(),
+                                      step_time, ckpt_loss))
 
-                    current_step += 1
-                    train_batch_id += 1
-                    if current_step % FLAGS.steps_per_checkpoint == 0:
-                        # Print statiistics for the previous epoch
-                        print ("batch no %d epoch %d" % (train_batch_id,current_epoch))
-                        print ("global step %d learning rate %.4f step-time %.3f loss %.4f "
-                               % (model.global_step.eval(), model.learning_rate.eval(),
-                                  step_time, ckpt_loss))
-                        result_file.write("global step %d learning rate %.4f step-time %.3f loss %.4f \n"
-                               % (model.global_step.eval(), model.learning_rate.eval(),
-                                  step_time, ckpt_loss))
+                            # Decrease learning rate if no improvement was seen over last 3 times.
+                            if FLAGS.GD:
+                                if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
+                                    sess.run(model.learning_rate_decay_op)
+                            previous_losses.append(ckpt_loss)
+                            step_time, ckpt_loss = 0.0, 0.0
 
-                        # Decrease learning rate if no improvement was seen over last 3 times.
-                        if FLAGS.GD:
-                            if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
-                                sess.run(model.learning_rate_decay_op)
-                        previous_losses.append(ckpt_loss)
-                        step_time, ckpt_loss = 0.0, 0.0
+                        if model.global_step.eval() % steps_per_epoch == 0:
+                            print ("epoch %d finished" % (current_epoch))
+                            result_file.write("epoch  %d finished \n" % (current_epoch))
 
-                    if model.global_step.eval() % steps_per_epoch == 0:
-                        print ("epoch %d finished" % (current_epoch))
-                        result_file.write("epoch  %d finished \n" % (current_epoch))
+                            previous_train_loss.append(epoch_loss)
+                            print("  avg train batch:  loss %.4f " % (epoch_loss))
+                            result_file.write("  avg train batch:  loss %.4f  \n" % (epoch_loss))
+                            epoch_loss = 0.0
 
-                        previous_train_loss.append(epoch_loss)
-                        print("  avg train batch:  loss %.4f " % (epoch_loss))
-                        result_file.write("  avg train batch:  loss %.4f  \n" % (epoch_loss))
-                        epoch_loss = 0.0
+                            valid_loss, valid_accuracy = model.steps(sess,valid_data)
 
-                        valid_loss, valid_accuracy = model.steps(sess,valid_data)
+                            print("  eval:  loss %.4f " % (valid_loss))
+                            result_file.write("  eval:  loss %.4f  \n" % (valid_loss))
+                            previous_eval_loss.append(valid_loss)
 
-                        print("  eval:  loss %.4f " % (valid_loss))
-                        result_file.write("  eval:  loss %.4f  \n" % (valid_loss))
-                        previous_eval_loss.append(valid_loss)
+                            # Stopping criterion
+                            improve_valid = previous_eval_loss[-1] < best_val_loss
+                            improve_train = previous_train_loss[-1] < best_train_loss
 
-                        # Stopping criterion
-                        improve_valid = previous_eval_loss[-1] < best_val_loss
-                        improve_train = previous_train_loss[-1] < best_train_loss
+                            if improve_valid:
+                                strikes = 0
+                                best_val_loss = previous_eval_loss[-1]
+                                best_val_epoch = current_epoch
+                                # Save checkpoint.
+                                model.saver.save(sess, checkpoint_path, global_step=model.global_step)
+                            else:
+                                strikes += 1
+                            if improve_train:
+                                best_train_loss = previous_train_loss[-1]
 
-                        if improve_valid:
-                            strikes = 0
-                            best_val_loss = previous_eval_loss[-1]
-                            best_val_epoch = current_epoch
-                            # Save checkpoint.
-                            model.saver.save(sess, checkpoint_path, global_step=model.global_step)
-                        else:
-                            strikes += 1
-                        if improve_train:
-                            best_train_loss = previous_train_loss[-1]
+                            sys.stdout.flush()
+                            train_batch_id =1
+                            current_epoch +=1
 
-                        sys.stdout.flush()
-                        train_batch_id =1
-                        current_epoch +=1
+                        # TODO: validation and testing
+                    #save model
+                    # model.saver.save(sess, checkpoint_path, global_step=model.global_step)
 
-                    # TODO: validation and testing
-                #save model
-                # model.saver.save(sess, checkpoint_path, global_step=model.global_step)
+                    checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
+                    model.saver.restore(sess, checkpoint.model_checkpoint_path)
 
-                checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
-                model.saver.restore(sess, checkpoint.model_checkpoint_path)
+                    print("Training finished!...")
+                    print("Best eval a t epoch %d" % best_val_epoch)
+                    result_file.write("Best eval a t epoch %d" % best_val_epoch)
 
-                print("Training finished!...")
-                print("Best eval a t epoch %d" % best_val_epoch)
-                result_file.write("Best eval a t epoch %d" % best_val_epoch)
+                    test_loss, test_error = model.steps(sess,train_data)
+                    print("  total train  loss %.4f, total train loss %.4f " % (test_loss, test_error))
+                    result_file.write("  total train  loss %.4f, total train loss %.4f " % (test_loss, test_error))
 
-                test_loss, test_error = model.steps(sess,train_data)
-                print("  total train  loss %.4f, total train loss %.4f " % (test_loss, test_error))
-                result_file.write("  total train  loss %.4f, total train loss %.4f " % (test_loss, test_error))
+                    test_loss, test_error = model.steps(sess,valid_data)
+                    print("  total test  loss %.4f, total error loss %.4f " % (test_loss, test_error))
+                    result_file.write("  total test  loss %.4f, total error loss %.4f " % (test_loss, test_error))
 
-                test_loss, test_error = model.steps(sess,valid_data)
-                print("  total test  loss %.4f, total error loss %.4f " % (test_loss, test_error))
-                result_file.write("  total test  loss %.4f, total error loss %.4f " % (test_loss, test_error))
+                    # print("random batch")
+                    # batch = get_random_batch(train_data,FLAGS.batch_size)
+                    # temp_input_batch = batch[0]
+                    # st_input_batch = batch[1]
+                    # target_batch = batch[-1]
+                    # _, batch_cost, batch_output = model.step(sess,temp_input_batch, st_input_batch, target_batch, True)
+                    #
+                    # print(batch_output)
+                    # print(target_batch)
 
-                # print("random batch")
-                # batch = get_random_batch(train_data,FLAGS.batch_size)
-                # temp_input_batch = batch[0]
-                # st_input_batch = batch[1]
-                # target_batch = batch[-1]
-                # _, batch_cost, batch_output = model.step(sess,temp_input_batch, st_input_batch, target_batch, True)
-                #
-                # print(batch_output)
-                # print(target_batch)
-
-                # with tf.variable_scope("Model", reuse=True, initializer=initializer):
-                #     model_valid = create_SRNN_model(sess,True,result_file,same_param=True)
-                #     test_loss = model_valid.steps(sess,train_data)
-                #
-                #     print("  total train loss on fresh model   %.4f " % (test_loss))
+                    # with tf.variable_scope("Model", reuse=True, initializer=initializer):
+                    #     model_valid = create_SRNN_model(sess,True,result_file,same_param=True)
+                    #     test_loss = model_valid.steps(sess,train_data)
+                    #
+                    #     print("  total train loss on fresh model   %.4f " % (test_loss))
 
 
 if __name__ == '__main__':
