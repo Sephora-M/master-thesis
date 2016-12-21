@@ -1,6 +1,6 @@
 from scipy.io import loadmat
 from scipy.spatial import distance
-import os
+import os, math
 import numpy as np
 
 
@@ -36,7 +36,7 @@ def get_pos_imgs(joint_positions_path='/local/home/msephora/master-thesis/master
                'swing_baseball', 'throw', 'walk', 'wave']
 
     splits = get_splits(ind_split=ind_split)
-    print(splits)
+    #print(splits)
     train_data = {}
     train_data_size=0
     valid_data = {}
@@ -49,11 +49,12 @@ def get_pos_imgs(joint_positions_path='/local/home/msephora/master-thesis/master
             mat_path = os.path.join(joint_positions_path,actions[i],video,'joint_positions.mat')
             if os.path.isfile(mat_path):
                 joint = loadmat(os.path.join(joint_positions_path, actions[i], video,'joint_positions.mat'))
-                print(video)
+                #print(video)
                 if video in splits[1]: #np.random.random() > validation_proportion:
                     train_data_size += 1
                     if normalized:
-                        train_pos_imgs[video] = joint['pos_world'][:,[2,1,11,12,13,14],:]
+                        norm_pos = normalize_positions(joint['pos_world'])
+                        train_pos_imgs[video] = norm_pos[:,[2,1,11,12,13,14],:]
                     else:
                         train_pos_imgs[video] = joint['pos_img'][:,[2,1,11,12,13,14],:]
                 elif video in splits[2]:
@@ -146,11 +147,11 @@ def extract_features(all_data, num_video, num_activities, num_considered_frames)
         current_video = 0
         for action_id in all_data:
             for video in all_data[action_id]:
-                temp_features[name][current_video,:,:] = extract_temp_features(all_data[action_id][video], joints[name], num_considered_frames)
+                temp_features[name][current_video,:,:] = extract_ntraj(all_data[action_id][video], joints[name], num_considered_frames)
                 current_video += 1
     st_features = {}
     for name in st_features_names:
-        st_features[name] = np.empty((num_video,num_considered_frames,1))
+        st_features[name] = np.empty((num_video,num_considered_frames,2))
         current_video = 0
         for action_id in all_data:
             for video in all_data[action_id]:
@@ -203,12 +204,48 @@ def extract_st_features(pos_img, joints_id, num_frames):
     _ , _ , tot_num_frames = pos_img.shape
 
     frames_chosen = np.linspace(0, tot_num_frames - 1, num_frames).astype(int)
-    st_features = np.empty((num_frames, 1))
+    st_features = np.empty((num_frames, 2))
 
     for i in range(num_frames):
         dist = distance.euclidean(pos_img[:,joints_id[0],frames_chosen[i]], pos_img[:,joints_id[1],frames_chosen[i]])
+        d = pos_img[:,joints_id[0],frames_chosen[i]] - pos_img[:,joints_id[1],frames_chosen[i]]
+        ort = math.atan2(d[1],d[0])*180.0/math.pi
         st_features[i,0] = dist
+        st_features[i,1] = ort
 
     return st_features
 
+
+def extract_ntraj(pos_img, joint_id, num_frames):
+
+    _ , _ , tot_num_frames = pos_img.shape
+
+    frames_chosen = np.linspace(0, tot_num_frames - 1, num_frames).astype(int)
+    temp_features = np.empty((num_frames, 3))
+    temp_features[0, 0] = pos_img[0, joint_id, frames_chosen[0]] # position x
+    temp_features[0, 1] = pos_img[1, joint_id, frames_chosen[0]] # position y
+    temp_features[0, 2] = 0.0
+    for i in range(num_frames-1):
+        d = pos_img[:,joint_id,frames_chosen[i+1]] - pos_img[:,joint_id,frames_chosen[i]]
+        ort = math.atan2(d[1],d[0])*180.0/math.pi
+        # dist = distance.euclidean(pos_img[:,joint_id,frames_chosen[i]], pos_img[:,joint_id,frames_chosen[i+1]])
+        # temp_features[i,0] = pos_img[0,joint_id,frames_chosen[i]] # position x
+        # temp_features[i,1] = pos_img[1,joint_id,frames_chosen[i]] # position y
+        # temp_features[i,2] = dist
+        temp_features[i+1,0] = d[0] #  dx
+        temp_features[i+1,1] = d[1] #  dy
+        temp_features[i+1,2] = ort
+
+
+    return temp_features
+
+def normalize_positions(pos_img):
+    """
+    Returns the relative positions of normalized joint positions w.r.t to the puppet center
+    :param pos_img:
+    :return:
+    """
+    torso_positions = (pos_img[:,2,:] + pos_img[:,1,:])/2
+    torso_positions=np.reshape(torso_positions,[2,1,pos_img.shape[2]])
+    return pos_img - np.tile(torso_positions, [1 ,15, 1])
 

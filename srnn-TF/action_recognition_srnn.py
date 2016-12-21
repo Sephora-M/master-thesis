@@ -15,7 +15,7 @@ b = ma.get_random_batch(tr,4,2)
 NUM_ACTIVITIES = 12
 
 tf.app.flags.DEFINE_float("learning_rate", 0.5, "Learning rate.")
-tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99,
+tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.95,
                           "Learning rate decays by this much.")
 tf.app.flags.DEFINE_boolean("l2_reg", False, "Adds a L2 regularization term")
 tf.app.flags.DEFINE_float("adam_epsilon", 1e-6,
@@ -32,7 +32,7 @@ tf.app.flags.DEFINE_integer("num_units", 16, "Size of each model layer.")
 tf.app.flags.DEFINE_integer("num_activities", NUM_ACTIVITIES, "Number of decoders, i.e. number of context chords")
 tf.app.flags.DEFINE_integer("num_frames", 10, "Number of frames in each example.")
 tf.app.flags.DEFINE_integer("num_temp_features", 3, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_st_features", 1, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_st_features", 2, "Number of frames in each example.")
 tf.app.flags.DEFINE_string("data", "JHMDB", "Data file name")
 tf.app.flags.DEFINE_boolean("normalized", True, "Normalized raw joint positionsn")
 tf.app.flags.DEFINE_boolean("GD", True, "Uses Gradient Descent with adaptive learning rate")
@@ -200,7 +200,7 @@ def main(_):
             result_file.write("Training on MSR Action 3D data using 40 frames")
     else:
         if FLAGS.num_frames == 10:
-            data = pickle.load( open( "split1_10f", "rb" ) )
+            data = pickle.load( open( "norm_10frames", "rb" ) )
             print("Training on JHMDB data using 10 frames ")
             result_file.write("Training on JHMDB data using 10 frames")
         elif FLAGS.num_frames == 20:
