@@ -31,7 +31,7 @@ tf.app.flags.DEFINE_integer("num_units", 16, "Size of each model layer.")
 
 tf.app.flags.DEFINE_integer("num_activities", NUM_ACTIVITIES, "Number of decoders, i.e. number of context chords")
 tf.app.flags.DEFINE_integer("num_frames", 10, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_temp_features", 3, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_temp_features", 5, "Number of frames in each example.")
 tf.app.flags.DEFINE_integer("num_st_features", 2, "Number of frames in each example.")
 tf.app.flags.DEFINE_string("data", "JHMDB", "Data file name")
 tf.app.flags.DEFINE_boolean("normalized", True, "Normalized raw joint positionsn")
@@ -200,7 +200,7 @@ def main(_):
             result_file.write("Training on MSR Action 3D data using 40 frames")
     else:
         if FLAGS.num_frames == 10:
-            data = pickle.load( open( "norm_10frames", "rb" ) )
+            data = pickle.load( open( "norm2_10frames.pkl", "rb" ) )
             print("Training on JHMDB data using 10 frames ")
             result_file.write("Training on JHMDB data using 10 frames")
         elif FLAGS.num_frames == 20:
@@ -220,8 +220,6 @@ def main(_):
     train_data = data['train']
     valid_data = data['test']
 
-    print("Num action in pickled loaded data")
-    print(len(train_data[0]))
     train_data_size = len(train_data[2])
 
 
