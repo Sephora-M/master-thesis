@@ -31,9 +31,10 @@ tf.app.flags.DEFINE_integer("num_units", 16, "Size of each model layer.")
 
 tf.app.flags.DEFINE_integer("num_activities", NUM_ACTIVITIES, "Number of decoders, i.e. number of context chords")
 tf.app.flags.DEFINE_integer("num_frames", 10, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_temp_features", 5, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_st_features", 2, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_temp_features", 3, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_st_features", 1, "Number of frames in each example.")
 tf.app.flags.DEFINE_string("data", "JHMDB", "Data file name")
+tf.app.flags.DEFINE_string("data_pickle",None, "optional pickle file containing the data ")
 tf.app.flags.DEFINE_boolean("normalized", True, "Normalized raw joint positionsn")
 tf.app.flags.DEFINE_boolean("GD", True, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "models", "Training directory.")
@@ -186,35 +187,38 @@ def main(_):
         os.makedirs(FLAGS.train_dir)
     result_file = open(FLAGS.train_dir + "/results.txt", 'a+')
 
-    if FLAGS.data == "MSR":
-        if FLAGS.num_frames == 10:
-            data = pickle.load( open( "dataMSR.pickle", "rb" ) )
-            print("Training on MSR Action 3D data using 10 frames")
-            result_file.write("Training on MSR Action 3D data using 10 frames ")
-        elif FLAGS.num_frames == 30:
-            data = pickle.load( open( "dataMSR30f.pkl", "rb" ) )
-            print("Training on MSR Action 3D data using 30 frames")
-            result_file.write("Training on MSR Action 3D data using 30 frames")
-        elif FLAGS.num_frames == 40:
-            print("Training on MSR Action 3D data using 40 frames")
-            result_file.write("Training on MSR Action 3D data using 40 frames")
+    if FLAGS.data_pickle is None:
+        if FLAGS.data == "MSR":
+            if FLAGS.num_frames == 10:
+                data = pickle.load( open( "dataMSR.pickle", "rb" ) )
+                print("Training on MSR Action 3D data using 10 frames")
+                result_file.write("Training on MSR Action 3D data using 10 frames ")
+            elif FLAGS.num_frames == 30:
+                data = pickle.load( open( "dataMSR30f.pkl", "rb" ) )
+                print("Training on MSR Action 3D data using 30 frames")
+                result_file.write("Training on MSR Action 3D data using 30 frames")
+            elif FLAGS.num_frames == 40:
+                print("Training on MSR Action 3D data using 40 frames")
+                result_file.write("Training on MSR Action 3D data using 40 frames")
+        else:
+            if FLAGS.num_frames == 10:
+                data = pickle.load( open( "norm3_10frames.pkl", "rb" ) )
+                print("Training on JHMDB data using 10 frames ")
+                result_file.write("Training on JHMDB data using 10 frames")
+            elif FLAGS.num_frames == 20:
+                data = pickle.load( open( "split1_20f", "rb" ) )
+                print("Training on JHMDB data using 20 frames ")
+                result_file.write("Training on JHMDB data using 20 frames")
+            elif FLAGS.num_frames == 30:
+                data = pickle.load( open( "split1_30f", "rb" ) )
+                print("Training on JHMDB data using 30 frames ")
+                result_file.write("Training on JHMDB data using 30 frames")
+            elif FLAGS.num_frames == 40:
+                data = pickle.load( open( "split1_40f", "rb" ) )
+                print("Training on JHMDB data using 40 frames ")
+                result_file.write("Training on JHMDB data using 40 frames")
     else:
-        if FLAGS.num_frames == 10:
-            data = pickle.load( open( "norm2_10frames.pkl", "rb" ) )
-            print("Training on JHMDB data using 10 frames ")
-            result_file.write("Training on JHMDB data using 10 frames")
-        elif FLAGS.num_frames == 20:
-            data = pickle.load( open( "split1_20f", "rb" ) )
-            print("Training on JHMDB data using 20 frames ")
-            result_file.write("Training on JHMDB data using 20 frames")
-        elif FLAGS.num_frames == 30:
-            data = pickle.load( open( "split1_30f", "rb" ) )
-            print("Training on JHMDB data using 30 frames ")
-            result_file.write("Training on JHMDB data using 30 frames")
-        elif FLAGS.num_frames == 40:
-            data = pickle.load( open( "split1_40f", "rb" ) )
-            print("Training on JHMDB data using 40 frames ")
-            result_file.write("Training on JHMDB data using 40 frames")
+        data = pickle.load( open( FLAGS.data_pickle, "rb" ) )
 
 
     train_data = data['train']

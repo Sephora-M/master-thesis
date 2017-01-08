@@ -3,6 +3,8 @@ from scipy.spatial import distance
 import os, math
 import numpy as np
 
+NUM_TEMP_FEATURES=3
+NUM_ST_FEATURES=2
 
 def get_splits(splits_path='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1):
     train = np.array([],dtype=str)
@@ -129,8 +131,6 @@ def read_pos_img(file_path):
 
 
 def extract_features(all_data, num_video, num_activities, num_considered_frames):
-    NUM_TEMP_FEATURES=5
-    NUM_ST_FEATURES=2
     print("Num videos:")
     print(num_video)
     temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
@@ -207,7 +207,7 @@ def extract_st_features(pos_img, joints_id, num_frames):
     _ , _ , tot_num_frames = pos_img.shape
 
     frames_chosen = np.linspace(0, tot_num_frames - 1, num_frames).astype(int)
-    st_features = np.empty((num_frames, 2))
+    st_features = np.empty((num_frames, NUM_ST_FEATURES))
 
     for i in range(num_frames):
         dist = distance.euclidean(pos_img[:,joints_id[0],frames_chosen[i]], pos_img[:,joints_id[1],frames_chosen[i]])
@@ -222,30 +222,28 @@ def extract_st_features(pos_img, joints_id, num_frames):
 def extract_ntraj(pos_img, joint_id, num_frames):
 
     _ , _ , tot_num_frames = pos_img.shape
-    relative_pos = normalize_positions(pos_img)
+    relative_pos = pos_img #normalize_positions(pos_img)
     frames_chosen = np.linspace(0, tot_num_frames - 1, num_frames).astype(int)
 
-    temp_features = np.empty((num_frames, 5))
+    temp_features = np.empty((num_frames, NUM_TEMP_FEATURES))
 
     for i in range(num_frames-1):
         d = pos_img[:,joint_id,frames_chosen[i+1]] - pos_img[:,joint_id,frames_chosen[i]]
-
+        dist = distance.euclidean(pos_img[:,joint_id,frames_chosen[i+1]], pos_img[:,joint_id,frames_chosen[i]])
         ort = math.atan2(d[1],d[0])*180.0/math.pi
         # dist = distance.euclidean(pos_img[:,joint_id,frames_chosen[i]], pos_img[:,joint_id,frames_chosen[i+1]])
         # temp_features[i,0] = pos_img[0,joint_id,frames_chosen[i]] # position x
         # temp_features[i,1] = pos_img[1,joint_id,frames_chosen[i]] # position y
         # temp_features[i,2] = dist
-        temp_features[i,0] = d[0] #  dx
-        temp_features[i,1] = d[1] #  dy
-        temp_features[i,2] = ort
-        temp_features[i,3] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
-        temp_features[i,4] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
+        temp_features[i,0] = dist #  dx
+        #temp_features[i,1] = ort
+        temp_features[i,1] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
+        temp_features[i,2] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
 
     temp_features[num_frames - 1,0] = 0.0
-    temp_features[num_frames - 1,1] = 0.0
-    temp_features[num_frames - 1,2] = 0.0
-    temp_features[num_frames - 1,3] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
-    temp_features[num_frames - 1,4] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
+    #temp_features[num_frames - 1,1] = 0.0
+    temp_features[num_frames - 1,1] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
+    temp_features[num_frames - 1,2] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
     return temp_features
 
 def normalize_positions(pos_img):
