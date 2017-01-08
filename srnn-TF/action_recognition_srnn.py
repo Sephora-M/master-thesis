@@ -32,7 +32,7 @@ tf.app.flags.DEFINE_integer("num_units", 16, "Size of each model layer.")
 tf.app.flags.DEFINE_integer("num_activities", NUM_ACTIVITIES, "Number of decoders, i.e. number of context chords")
 tf.app.flags.DEFINE_integer("num_frames", 10, "Number of frames in each example.")
 tf.app.flags.DEFINE_integer("num_temp_features", 3, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_st_features", 1, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_st_features", 2, "Number of frames in each example.")
 tf.app.flags.DEFINE_string("data", "JHMDB", "Data file name")
 tf.app.flags.DEFINE_string("data_pickle",None, "optional pickle file containing the data ")
 tf.app.flags.DEFINE_boolean("normalized", True, "Normalized raw joint positionsn")
@@ -237,6 +237,8 @@ def main(_):
                 with tf.variable_scope("Model", reuse=None) : #, initializer=initializer):
                     print("Creating SRNN model ")
                     print("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
+                    if not FLAGS.GD:
+                        print("with Adam Optimizer")
                     result_file.write("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
                     model = create_SRNN_model(sess,False,result_file)
 

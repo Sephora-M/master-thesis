@@ -116,11 +116,21 @@ class SRNN_model(object):
 
         tvars = tf.trainable_variables()
         if not forward_only:
-            optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
+            if self.GD:
+                optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
 
-            clipped_grads, norm = tf.clip_by_global_norm(tf.gradients(self.cost,tvars), self.max_grad_norm)
-            self.gradients_norm = norm
-            self.updates = optimizer.apply_gradients(zip(clipped_grads, tvars), global_step=self.global_step)
+                clipped_grads, norm = tf.clip_by_global_norm(tf.gradients(self.cost,tvars), self.max_grad_norm)
+                self.gradients_norm = norm
+                self.updates = optimizer.apply_gradients(zip(clipped_grads, tvars), global_step=self.global_step)
+            else:
+                aggregation_method = tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N
+                optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=self.adam_epsilon)
+                gradients_and_params = optimizer.compute_gradients(self.cost, tvars,
+                                                             aggregation_method=aggregation_method)
+                gradients, params = zip(*gradients_and_params)
+                norm = tf.global_norm(gradients)
+                self.gradients_norm = norm
+                self.updates = optimizer.apply_gradients(zip(gradients, params), global_step=self.global_step)
 
         self.saver = tf.train.Saver(tf.all_variables(), max_to_keep=1)
 
