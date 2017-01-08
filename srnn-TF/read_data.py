@@ -3,7 +3,7 @@ from scipy.spatial import distance
 import os, math
 import numpy as np
 
-NUM_TEMP_FEATURES=3
+NUM_TEMP_FEATURES=4
 NUM_ST_FEATURES=2
 
 def get_splits(splits_path='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1):
@@ -235,15 +235,15 @@ def extract_ntraj(pos_img, joint_id, num_frames):
         # temp_features[i,0] = pos_img[0,joint_id,frames_chosen[i]] # position x
         # temp_features[i,1] = pos_img[1,joint_id,frames_chosen[i]] # position y
         # temp_features[i,2] = dist
-        temp_features[i,0] = dist #  dx
-        #temp_features[i,1] = ort
-        temp_features[i,1] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
-        temp_features[i,2] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
+        temp_features[i,2] = dist #  dx
+        temp_features[i,3] = ort
+        temp_features[i,0] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
+        temp_features[i,1] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
 
-    temp_features[num_frames - 1,0] = 0.0
-    #temp_features[num_frames - 1,1] = 0.0
-    temp_features[num_frames - 1,1] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
-    temp_features[num_frames - 1,2] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
+    temp_features[num_frames - 1,2] = 0.0
+    temp_features[num_frames - 1,3] = 0.0
+    temp_features[num_frames - 1,0] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
+    temp_features[num_frames - 1,1] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
     return temp_features
 
 def normalize_positions(pos_img):
