@@ -14,7 +14,7 @@ b = ma.get_random_batch(tr,4,2)
 
 NUM_ACTIVITIES = 12
 
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "Learning rate.")
+tf.app.flags.DEFINE_float("learning_rate", 0.0001, "Learning rate.")
 tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.95,
                           "Learning rate decays by this much.")
 tf.app.flags.DEFINE_boolean("l2_reg", False, "Adds a L2 regularization term")
@@ -31,14 +31,14 @@ tf.app.flags.DEFINE_integer("num_units", 16, "Size of each model layer.")
 
 tf.app.flags.DEFINE_integer("num_activities", NUM_ACTIVITIES, "Number of decoders, i.e. number of context chords")
 tf.app.flags.DEFINE_integer("num_frames", 10, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_temp_features", 3, "Number of frames in each example.")
-tf.app.flags.DEFINE_integer("num_st_features", 2, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_temp_features", 4, "Number of frames in each example.")
+tf.app.flags.DEFINE_integer("num_st_features", 1, "Number of frames in each example.")
 tf.app.flags.DEFINE_string("data", "JHMDB", "Data file name")
 tf.app.flags.DEFINE_string("data_pickle",None, "optional pickle file containing the data ")
-tf.app.flags.DEFINE_boolean("normalized", True, "Normalized raw joint positionsn")
-tf.app.flags.DEFINE_boolean("GD", True, "Uses Gradient Descent with adaptive learning rate")
+tf.app.flags.DEFINE_boolean("normalized", False, "Normalized raw joint positionsn")
+tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "models", "Training directory.")
-tf.app.flags.DEFINE_string("gpu", "/gpu:2", "GPU to run ")
+tf.app.flags.DEFINE_string("gpu", "/cpu:0", "GPU to run ")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
@@ -57,8 +57,8 @@ tf.app.flags.DEFINE_boolean("test_model", False,
 
 FLAGS = tf.app.flags.FLAGS
 
-def extract_features(dir_name='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/joint_positions',
-                     sub_activities=True, MSRdata=False,validation_proportion=0.30,num_frames=FLAGS.num_frames, normalized=FLAGS.normalized):
+def extract_features(dir_name='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/estimated_joint_positions',
+                     sub_activities=True, data='UTK',validation_proportion=0.30,num_frames=FLAGS.num_frames, normalized=FLAGS.normalized):
 
     # if not get_train_data ^ get_valid_data ^ get_test_data or get_train_data & get_valid_data & get_test_data:
     #     raise ValueError("Only one of training_data, valid_data and test_data must be True")
@@ -68,21 +68,34 @@ def extract_features(dir_name='/local/home/msephora/master-thesis/master-thesis/
     else:
         num_activities = 21
 
-    if MSRdata:
-        dir_name='/local/home/msephora/master-thesis/master-thesis/data/MSRAction3D/MSRAction3DSkeleton(20joints)'
-        train_data, train_num_video, valid_data, valid_num_video = rd.get_pos_imgsMRS(dir_name)
+    if data == 'MSR':
+        dir_name='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/MSRAction3D/MSRAction3DSkeleton(20joints)'
+        train_data, train_num_video, valid_data, valid_num_video, max, min  = rd.get_pos_imgsMRS(dir_name)
         num_activities = 20
+    elif data == 'UTK':
+        train_data, train_num_video, valid_data, valid_num_video, max, min = rd.get_pos_imgsUTK()
+        num_activities = 10
+    elif data == 'NTU':
+        train_data, train_num_video, valid_data, valid_num_video, max, min = rd.get_pos_imgsNTU()
+        num_activities = 60
     else:
-        train_data, train_num_video, valid_data, valid_num_video = rd.get_pos_imgs(dir_name,sub_activities=sub_activities,
-                                                                                   validation_proportion=validation_proportion,normalized=normalized)
+        train_data, train_num_video, valid_data, valid_num_video, max, min = rd.get_pos_imgsJHMDB(dir_name, sub_activities=sub_activities,
+                                                                                        validation_proportion=validation_proportion, normalized=normalized)
 
+    print('max num frames =')
+    print(max)
+    print('min num frames =')
+    print(min)
 
     train_dataset = rd.extract_features(train_data,train_num_video,num_activities,num_considered_frames=num_frames)
     valid_dataset = rd.extract_features(valid_data,valid_num_video,num_activities,num_considered_frames=num_frames)
 
     return train_dataset, valid_dataset
 
-
+def create_pickle(pickle_name, dir_name, num_frames, normalized, data):
+    tr,te= extract_features(dir_name,num_frames=num_frames,normalized=normalized, data=data)
+    dic={'train':tr,'test':te}
+    pickle.dump(dic,open(pickle_name,'wb'))
 
 def synthetic_data(train_size, valid_size, test_size,num_frames,num_features):
     temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']

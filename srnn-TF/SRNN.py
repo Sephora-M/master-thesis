@@ -104,8 +104,6 @@ class SRNN_model(object):
 
 
         output = tf.concat(1,final_outputs, name="output_lastCells")
-
-
         self.final_states = states
         #print(output)
         self.logits = tf.matmul(output, weights['out'], name="logits") + biases['out']
