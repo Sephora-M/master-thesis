@@ -6,7 +6,7 @@ import numpy as np
 NUM_TEMP_FEATURES=4
 NUM_ST_FEATURES=1
 
-def get_splits(splits_path='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1):
+def get_splits(splits_path='/disks/sdh/01/sephora/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1):
     train = np.array([],dtype=str)
     test = np.array([],dtype=str)
 
