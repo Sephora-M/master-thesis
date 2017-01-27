@@ -302,13 +302,14 @@ def extract_features(all_data, num_video, num_activities, num_considered_frames)
     print("Num videos:")
     print(num_video)
     temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
+    #st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
+    #                         'belly-rightLeg','belly-leftLeg']
     st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
-                             'belly-rightLeg','belly-leftLeg']
-
+                             'belly-rightLeg','belly-leftLeg','leftArm-rightArm','leftLeg-rightLeg']
     joints = {'face-face' : 0,'belly-belly' : 1,'rightArm-rightArm' : 2,'leftArm-leftArm' : 3,'rightLeg-rightLeg' : 4,'leftLeg-leftLeg' : 5}
 
     joints_pairs = {'face-leftArm' : [0,3],'face-rightArm': [0,2],'face-belly' : [0,1],'belly-leftArm': [1,3],'belly-rightArm': [1,2],
-                             'belly-rightLeg': [1,4],'belly-leftLeg': [1,5]}
+                             'belly-rightLeg': [1,4],'belly-leftLeg': [1,5],'leftArm-rightArm':[3,2],'leftLeg-rightLeg':[5,4]}
     temp_features = {}
 
 

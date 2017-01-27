@@ -41,7 +41,7 @@ class SRNN_model(object):
 
         self.temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
         self.st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
-                             'belly-rightLeg','belly-leftLeg']
+                             'belly-rightLeg','belly-leftLeg','leftArm-rightArm','leftLeg-rightLeg']
         nodes_names = {'face','arms','legs','belly'}
         edgesRNN = {}
         nodesRNN = {}
@@ -106,10 +106,10 @@ class SRNN_model(object):
                 node_inputs['belly'] = tf.concat(1,[outputs['belly-belly'], outputs['face-belly'], outputs['belly-leftArm'], outputs['belly-rightArm'],
                                             outputs['belly-leftLeg'], outputs['belly-rightLeg']])
 
-                node_inputs['arms'] = tf.concat(1,[outputs['rightArm-rightArm'], outputs['leftArm-leftArm'], outputs['face-rightArm'],
+                node_inputs['arms'] = tf.concat(1,[outputs['rightArm-rightArm'], outputs['leftArm-leftArm'], outputs['leftArm-rightArm'], outputs['face-rightArm'],
                                             outputs['face-leftArm'],outputs['belly-rightArm'], outputs['belly-leftArm']])
 
-                node_inputs['legs'] = tf.concat(1,[outputs['rightLeg-rightLeg'], outputs['leftLeg-leftLeg'], outputs['belly-rightLeg'], outputs['belly-leftLeg']])
+                node_inputs['legs'] = tf.concat(1,[outputs['rightLeg-rightLeg'], outputs['leftLeg-leftLeg'],outputs['leftLeg-rightLeg'], outputs['belly-rightLeg'], outputs['belly-leftLeg']])
 
                 for node_name in nodes_names:
                     node_outputs[node_name], states[node_name] = nodesRNN[node_name](node_inputs[node_name], states[node_name], scope='lstm_'+node_name)

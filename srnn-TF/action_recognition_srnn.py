@@ -101,7 +101,7 @@ def create_pickle(pickle_name, dir_name, num_frames, normalized, data):
 def synthetic_data(train_size, valid_size, test_size,num_frames,num_features):
     temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
     st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
-                             'belly-rightLeg','belly-leftLeg']
+                             'belly-rightLeg','belly-leftLeg','leftArm-rightArm','leftLeg-rightLeg']
 
     def random_action(size):
         action = np.random.randint(0, NUM_ACTIVITIES, size=size)
