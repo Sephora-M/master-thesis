@@ -1,0 +1,49 @@
+\providecommand{\bysame}{\leavevmode\hbox to3em{\hrulefill}\thinspace}
+\providecommand{\MR}{\relax\ifhmode\unskip\space\fi MR }
+% \MRhref is called by the amsart/book/proc definition of \MR.
+\providecommand{\MRhref}[2]{%
+  \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2}
+}
+\providecommand{\href}[2]{#2}
+\begin{thebibliography}{1}
+
+\bibitem{girshick2015fast}
+Ross Girshick, \emph{Fast r-cnn}, Proceedings of the IEEE International
+  Conference on Computer Vision, 2015, pp.~1440--1448.
+
+\bibitem{jhuang2013towards}
+Hueihan Jhuang, Juergen Gall, Silvia Zuffi, Cordelia Schmid, and Michael Black,
+  \emph{Towards understanding action recognition}, Proceedings of the IEEE
+  International Conference on Computer Vision, 2013, pp.~3192--3199.
+
+\bibitem{Kuehne11}
+H.~Kuehne, H.~Jhuang, E.~Garrote, T.~Poggio, and T.~Serre, \emph{{HMDB}: a
+  large video database for human motion recognition}, Proceedings of the
+  International Conference on Computer Vision (ICCV), 2011.
+
+\bibitem{simonyan2014two}
+Karen Simonyan and Andrew Zisserman, \emph{Two-stream convolutional networks
+  for action recognition in videos}, Advances in Neural Information Processing
+  Systems, 2014, pp.~568--576.
+
+\bibitem{tran2015learning}
+Du~Tran, Lubomir Bourdev, Rob Fergus, Lorenzo Torresani, and Manohar Paluri,
+  \emph{Learning spatiotemporal features with 3d convolutional networks}, ICCV,
+  2015, pp.~4489--4497.
+
+\bibitem{wang2013action}
+Heng Wang and Cordelia Schmid, \emph{Action recognition with improved
+  trajectories}, Proceedings of the IEEE International Conference on Computer
+  Vision, 2013, pp.~3551--3558.
+
+\bibitem{wang2015towards}
+Limin Wang, Yuanjun Xiong, Zhe Wang, and Yu~Qiao, \emph{Towards good practices
+  for very deep two-stream convnets}, arXiv preprint arXiv:1507.02159 (2015).
+
+\bibitem{yue2015beyond}
+Joe Yue-Hei~Ng, Matthew Hausknecht, Sudheendra Vijayanarasimhan, Oriol Vinyals,
+  Rajat Monga, and George Toderici, \emph{Beyond short snippets: Deep networks
+  for video classification}, Proceedings of the IEEE Conference on Computer
+  Vision and Pattern Recognition, 2015, pp.~4694--4702.
+
+\end{thebibliography}

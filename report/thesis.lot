@@ -1,0 +1,15 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {\relax 6.1}{\ignorespaces Baseline Results}}{11}{table.caption.10}
+\contentsline {table}{\numberline {\relax 6.2}{\ignorespaces Benefit of integrating explicit semantic structure}}{13}{table.caption.11}
+\contentsline {table}{\numberline {\relax 6.3}{\ignorespaces Evaluation of Fusion Methods}}{14}{table.caption.12}
+\contentsline {table}{\numberline {\relax 6.4}{\ignorespaces 3 Splits Performance}}{14}{table.caption.13}
+\contentsline {table}{\numberline {\relax 6.5}{\ignorespaces Accuracy on JHMDB (split 1) using person ROIs of different quality. Similar as in UCF101, baseline refers to the inhouse trained model using solely ``scene'' channel.\relax }}{15}{table.caption.14}
+\contentsline {table}{\numberline {\relax 6.6}{\ignorespaces Comparison with the state-of-the-art methods on the UCF101 dataset.\relax }}{19}{table.caption.21}
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {\relax A.1}{\ignorespaces Action categorization according to semantic cue}}{23}{table.caption.22}

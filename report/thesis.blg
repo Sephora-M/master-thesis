@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: thesis.aux
+The style file: amsplain.bst
+A level-1 auxiliary file: ./chapters/acknowledgment.aux
+Database file #1: ref.bib
+Warning--missing pages in wang2015towards
+You've used 8 entries,
+            2213 wiz_defined-function locations,
+            541 strings with 5345 characters,
+and the built_in function-call counts, 3760 in all, are:
+= -- 355
+> -- 173
+< -- 0
++ -- 68
+- -- 60
+* -- 258
+:= -- 546
+add.period$ -- 8
+call.type$ -- 8
+change.case$ -- 54
+chr.to.int$ -- 0
+cite$ -- 9
+duplicate$ -- 167
+empty$ -- 303
+format.name$ -- 60
+if$ -- 835
+int.to.chr$ -- 0
+int.to.str$ -- 8
+missing$ -- 16
+newline$ -- 34
+num.names$ -- 16
+pop$ -- 78
+preamble$ -- 1
+purify$ -- 46
+quote$ -- 0
+skip$ -- 164
+stack$ -- 0
+substring$ -- 272
+swap$ -- 67
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 32
+warning$ -- 1
+while$ -- 34
+width$ -- 9
+write$ -- 78
+(There was 1 warning)
