@@ -24,7 +24,8 @@ class SRNN_model(object):
 
         return:
         """
-
+        
+        num_layers=1
         self.batch_size = batch_size
         self.num_classes = num_classes
         self.num_temp_features = num_temp_features
@@ -40,7 +41,7 @@ class SRNN_model(object):
 
         self.temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
         self.st_features_names = ['face-leftArm','face-rightArm','face-belly','belly-leftArm','belly-rightArm',
-                             'belly-rightLeg','belly-leftLeg']
+                             'belly-rightLeg','belly-leftLeg','leftArm-rightArm','leftLeg-rightLeg']
         nodes_names = {'face','arms','legs','belly'}
         edgesRNN = {}
         nodesRNN = {}
@@ -50,24 +51,39 @@ class SRNN_model(object):
 
         for temp_feat in self.temp_features_names:
             self.inputs[temp_feat] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_temp_features), name=temp_feat)
-            edgesRNN[temp_feat] = tf.nn.rnn_cell.LSTMCell(num_units)
+            single_cell =tf.nn.rnn_cell.LSTMCell(num_units)
+            if num_layers == 1:
+                edgesRNN[temp_feat] = single_cell
+            else:
+                edgesRNN[temp_feat] = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
             states[temp_feat] = edgesRNN[temp_feat].zero_state(self.batch_size,tf.float32)
 
         for st_feat in self.st_features_names:
             self.inputs[st_feat] = tf.placeholder(tf.float32, shape=(None,num_frames, self.num_st_features), name=st_feat)
-            edgesRNN[st_feat] = tf.nn.rnn_cell.LSTMCell(num_units)
+            single_cell =tf.nn.rnn_cell.LSTMCell(num_units)
+            if num_layers == 1:
+                edgesRNN[st_feat] = single_cell
+            else:
+                edgesRNN[st_feat] = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
             states[st_feat] = edgesRNN[st_feat].zero_state(self.batch_size,tf.float32)
 
         for node in nodes_names:
             self.inputs[node] = tf.placeholder(tf.float32, shape=(None,num_frames, None), name=node)
-            nodesRNN[node] = tf.nn.rnn_cell.LSTMCell(num_units)
+            single_cell =tf.nn.rnn_cell.LSTMCell(num_units)
+            if num_layers == 1:
+                nodesRNN[node] = single_cell
+            else:
+                nodesRNN[node] = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
             states[node] = nodesRNN[node].zero_state(self.batch_size, tf.float32)
 
         weights = {'out' : tf.Variable(tf.random_normal([num_units*num_frames,num_classes]))}
         biases = {'out' : tf.Variable(tf.random_normal([num_classes]))}
 
-
-        fullbodyRNN = tf.nn.rnn_cell.LSTMCell(num_units)
+        single_cell =tf.nn.rnn_cell.LSTMCell(num_units)
+        if num_layers == 1:
+            fullbodyRNN = single_cell
+        else:
+            fullbodyRNN = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
         states['fullbody'] = fullbodyRNN.zero_state(self.batch_size, tf.float32)
 
         outputs = {}
@@ -90,10 +106,10 @@ class SRNN_model(object):
                 node_inputs['belly'] = tf.concat(1,[outputs['belly-belly'], outputs['face-belly'], outputs['belly-leftArm'], outputs['belly-rightArm'],
                                             outputs['belly-leftLeg'], outputs['belly-rightLeg']])
 
-                node_inputs['arms'] = tf.concat(1,[outputs['rightArm-rightArm'], outputs['leftArm-leftArm'], outputs['face-rightArm'],
+                node_inputs['arms'] = tf.concat(1,[outputs['rightArm-rightArm'], outputs['leftArm-leftArm'], outputs['leftArm-rightArm'], outputs['face-rightArm'],
                                             outputs['face-leftArm'],outputs['belly-rightArm'], outputs['belly-leftArm']])
 
-                node_inputs['legs'] = tf.concat(1,[outputs['rightLeg-rightLeg'], outputs['leftLeg-leftLeg'], outputs['belly-rightLeg'], outputs['belly-leftLeg']])
+                node_inputs['legs'] = tf.concat(1,[outputs['rightLeg-rightLeg'], outputs['leftLeg-leftLeg'],outputs['leftLeg-rightLeg'], outputs['belly-rightLeg'], outputs['belly-leftLeg']])
 
                 for node_name in nodes_names:
                     node_outputs[node_name], states[node_name] = nodesRNN[node_name](node_inputs[node_name], states[node_name], scope='lstm_'+node_name)
@@ -104,8 +120,6 @@ class SRNN_model(object):
 
 
         output = tf.concat(1,final_outputs, name="output_lastCells")
-
-
         self.final_states = states
         #print(output)
         self.logits = tf.matmul(output, weights['out'], name="logits") + biases['out']
