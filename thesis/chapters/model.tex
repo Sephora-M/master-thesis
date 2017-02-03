@@ -1,0 +1,232 @@
+% !TEX root = ../thesis.tex
+
+\chapter{Methodology}
+\label{chap:model}
+We choose deep learning for our task. In contrast to conventional vision learning methods, deep learning methods not only learn a classification model but also a holistic representation of the raw image or video input, which liberates the user from exhaustive pre- and post-processing, hence opens the door to a series of online applications for this field of study. 
+Moreover, deep neural networks are able to extract high level semantic features, which is critical in dealing with abstract concepts like action. 
+
+In order to separate semantic structures, we adopt the method in R*CNN \cite{gkioxari2015contextual}, which utilizes the concept of regional pooling initially proposed by \cite{girshick2015fast}.
+
+While ground truth person bounding boxes is available in R*CNN, we only have action labels for each video sequence. We employ state-of-art object detector Faster-RCNN \cite{ren2015faster} for person and object detection.
+
+To handle detection failure due to motion blur, extreme pose variation or occlusion and additionally filter out persons irrelevant to the action, we use Dynamic Programming on frame-wise detections to estimate a smooth person trajectory through the video sequence.
+
+Finally we train our network using settings and techniques suggested in \cite{wang2015towards} and delve into various fusion methods to maximize the complementary effect of different cues.
+
+The rest of this chapter is organized as follows: 
+\begin{itemize}
+\item in \autoref{sec:modelarch} we give a comprehensive insight into our model architecture;
+\item in \autoref{sec:detection} we provide an overview on Faster-RCNN as well as a recap over our post-processing on raw detection results.
+\item finally in \autoref{sec:fusion} we propose various fusion methods and describe the motivations behind each of them.
+\end{itemize}
+ 
+
+\section{Model Architecture}\label{sec:modelarch}
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{figures/net.pdf}
+\caption[Network Architecture]{The general architecture of our network. Semantic cues (scene, person and objects) are integrated as pooling regions to create explicit semantic structures (parallel fc layers). The classification results from each semantic channel are merged in a fusion unit as well be discussed in \autoref{sec:fusion}.}
+\label{fig:net}
+\end{figure}
+The general setting of our network architecture is illustrated in \autoref{fig:net}. It is composed of three parts.
+
+The first part of our model is comprised of very deep convolutional layers. 
+We adopt VGG16 configuration proposed by \cite{simonyan2014very}. 
+This publicly available network is trained on ImageNet data for the ILSVRC2012 \cite{ILSVRC15} challenge and has been used as initialization network for various tasks.
+A total of 13 convolutional layers and 3 fully connected layers are implemented. For clarity, its specifications are recapped in \autoref{tab:vgg16}.
+\begin{table}
+\centering\small
+\begin{tabular}{m{0.2\linewidth}|m{0.3\linewidth}|m{0.2\linewidth}}
+\hline
+Layer & Param & Effective \newline Receptive Field \\ \hline
+Conv1-1 \newline Conv1-2 & $ \begin{aligned}
+k &= 2\times 2, & n &= 64,\\
+p &= 1, & s &= 1 \end{aligned} $ & 3\\ \hline
+MaxPool & $ \begin{aligned}
+k & = 2 \times 2, &s &= 2
+\end{aligned}$ & 6\\ \hline
+Conv2-1 \newline Conv2-2 & $ \begin{aligned}
+k &= 3\times 3, & n &= 128,\\
+p &= 1, & s &= 1 \end{aligned} $ &  14\\ \hline
+MaxPool & $ \begin{aligned}
+k & = 2 \times 2, &s &= 2
+\end{aligned}$ & 20\\ \hline
+Conv3-1 \newline Conv3-2 \newline Conv3-3 & 
+$ \begin{aligned}
+k &= 3\times 3, & n &= 256,\\
+p &= 1, & s &= 1  \end{aligned} $ & 44\\ \hline
+MaxPool & $ \begin{aligned}
+k & = 2 \times 2, &s &= 2
+\end{aligned}$ & 56\\ \hline
+Conv4-1 \newline Conv4-2 \newline Conv4-3 & $ \begin{aligned}
+k &= 3\times 3, & n &= 512,\\
+p &= 1, & s &= 1  \end{aligned} $ & 104\\ \hline
+MaxPool & $ \begin{aligned}
+k & = 2 \times 2, &s &= 2
+\end{aligned}$ & 128\\ \hline
+Conv5-1 \newline Conv5-2 \newline Conv5-3 & $ \begin{aligned}
+k &= 3\times 3, & n &= 512,\\
+p &= 1, & s &= 1  \end{aligned} $ & 224\\ \hline
+MaxPool  & $ \begin{aligned}
+k & = 2 \times 2, &s &= 2
+\end{aligned}$ & 272\\ \hline
+fc6\newline Dropout  & $ \begin{aligned}
+n & = 4096, & r &= 0.5
+\end{aligned} $ & -\\ \hline
+fc7\newline Dropout & $ \begin{aligned}
+n & = 4096, & r &= 0.5
+\end{aligned} $ & -\\ \hline
+fc8  & $ \begin{aligned}
+n & = 1000
+\end{aligned} $ & -\\ \hline
+\multicolumn{3}{c}{softmax} \\ \hline
+\end{tabular}
+\caption[VGG16 Configuration]{Configuration of Conv1 - Conv5 layers in VGG16. $ k $, $ n $, $ p $, $ s $ denote denote kernel size, number of output channels and padding and stride respectively. For the sake of brevity, ReLu layers, attached after every convolutional and fully connected layer, are omitted in the table.}
+\label{tab:vgg16}
+\end{table}
+\subsection{Semantic decomposition using RoiPooling}
+The second part of the network starts with a RoiPooling (Region Of Interest Pooling) layer (\cite{girshick2015fast}), which replaces the original MaxPooling after conv5-3.
+
+Compared to regular pooling layers, which operate on the whole spatial span, the RoiPooling layer works in regions given at runtime. 
+More concretely, it takes a series of rectangular regions as input and generates an independent feature map for each ROI by performing MaxPooling within the spatial area defined by each of these ROIs. 
+
+Since the ROIs take on various sizes, a conventional pooling operation would output feature maps of different sizes. 
+However the consecutive fully connected layer requires fixed input size.
+In order to guarantee uniform output size, RoiPooling layer adopts adaptive bin size.
+As is illustrated in \ref{fig:roipooling} (modified from \cite{kaiminghe}), given a ROI of size $ W \times H $ and the output feature map specified to be $ w \times h $ (in our case $ 7\times 7 $), RoiPooling first evenly divides the given ROIs into bins of size $ \lfloor\frac{W}{w}\rfloor \times \lfloor \frac{H}{h}\rfloor$ and then performs MaxPooling in each bin.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\linewidth]{figures/roipooling.pdf}
+\caption[RoiPooling]{RoiPooling layer performs MaxPooling in regions of arbitrary size to a fixed size feature map by adapting the bin sizes.}\label{fig:roipooling}
+\end{figure}
+
+%\subcaptionbox{\label{fig:roipooling}}[0.6\linewidth]{\includegraphics[width=0.6\linewidth]{figures/roipooling.pdf}}
+%\subcaptionbox{\label{fig:irrelevantMIL}}[0.3\linewidth]{\includegraphics[width=0.3\linewidth]{figures/obj_detect1.png}}
+%\begin{subfigure}[b]{0.6\linewidth}
+%\includegraphics[width=0.9\columnwidth]{figures/roipooling.pdf}
+%\caption[RoiPooling]{RoiPooling layer performs MaxPooling in regions of arbitrary size to a fixed size feature map by adapting the bin sizes.}\label{fig:roipooling}
+%\end{subfigure}
+%\begin{subfigure}[b]{0.3\linewidth}
+%\includegraphics[width=0.9\columnwidth]{figures/obj_detect1.png}
+%\caption[Example of object detections]{Example where the key object is mixed among many irrelevant objects.}\label{fig:irrelevantMIL}
+%\end{subfigure}
+%\caption[]{\subref{fig:roipooling} RoiPooling layer performs MaxPooling in regions of arbitrary size to a fixed size feature map by adapting the bin sizes. \subref{fig:irrelevantMIL} Example where the key object is mixed among many irrelevant objects.}\label{fig:roiandmil}
+%\end{figure}
+
+In accordance with our previous analysis, we group the ROIs into three categories, namely scene, person and objects. 
+Depending on the category of ROIs, their feature maps are to be fed into one of the three fully connected branches representing each of the three cues respectively.
+The underlying idea is simple: since the contribution of different semantic components are distinct, they should be handled separately. 
+By leveraging the spatial  correspondence between feature maps and input images, we extract each cue on feature level, so as to train a more specialized classifier for each of them. 
+
+As for the ROI inputs, we use an external object detector (see \autoref{sec:detection}) to generate person and object ROIs, while scene ROI is simply set to be the full input span $ \left(0, 0, W, H\right) $, in which case RoiPooling is equivalent to a regular MaxPooling.
+
+
+For each input frame $ I $, exactly one person ROI and one scene ROI are used, while a variable number of ROIs are accepted for the object cue. 
+This is due to the fact that in current datasets the defined action classes mostly involve only a single protagonist, while the contributing objects may be, and often are, multiple. 
+
+\subsection{Object Channel with Multiple Instance Learning}
+Often the decisive object, if detected at all, is mixed among many irrelevant detections (see \autoref{fig:irrelevantMIL}).
+\begin{figure}
+\centering
+\includegraphics[width=0.5\linewidth]{figures/obj_detect1.png}
+\caption[Example of object detections]{Example where the key object is mixed among many irrelevant objects.}\label{fig:irrelevantMIL}
+\end{figure}
+This described problem matches basic scenario in Multiple Instance Learning (MIL). 
+In MIL, one is given bags of samples, called instances.
+Unlike in conventional supervised learning problems, where each instance is labeled individually, labels are assigned to \textit{bags of} instances.
+In the standard MIL assumption, a bag (and all its containing instances) is labeled positive, as long as there exists one positive instance in the bag; conversely, a bag is labeled negative, if all containing instances are negative.
+The goal in MIL is to induce the underlying concept that will label individual instances correctly. 
+In our case, bags translate to video frames, and instances are the detected objects.
+Considering the previous example shown in \autoref{fig:irrelevantMIL}, all objects are labeled as "Drumming", although only "Drum" is the conclusive instance.
+
+MIL has its own established field of study and it is not straightforward to transfer it directly to deep learning framework. 
+While an abundance of algorithms has been developed, which implicitly or explicitly generalize the underlying MI assumption (\cite{foulds2010review}), they commonly leverage the most representative instance within a bag to encode the similarity of the bag to a candidate concept.
+This similarity measurement is used to (a) find the desired concept alternately or (b) create a new feature space for bag representation, upon which a classifier can be trained to predict new bags.
+
+In the scope of this thesis, we adopt the approach proposed by Gkioxari, which took inspiration from this aforementioned idea. 
+In their work \cite{gkioxari2015contextual}, they combine multiple context regions, called secondary regions, using a MIL layer. For an input frame and a set of objects $ O $, the MIL layer computes the classification score for class $ c $ as:
+\begin{equation}
+s\left[c\right] = \max_{o\in O} s_{o}\left[c\right],
+\end{equation}
+where $  s_{o}\left[c\right] $ denotes the classification score of object $ o $ ROI for class $ c $. In other words, for each class the classification score of a frame (bag) is given by the object (instance) that is most representative for target class.
+The back-propagation works similar to a normal MaxPooling layer. Derivatives from the upper layer will be passed down to (and only to) the instance from which the value was pooled, i.e.
+\begin{equation}
+\left[\derivative{L}{x_{i}}\right]_{c} = 
+\lbrace i = \argmax_{n} x_{n}\left[c\right]\rbrace\left[\derivative{L}{y}\right]_{c},
+\end{equation}
+where $ \left[\derivative{L}{x_{i}}\right]_{c}  $ and $ \left[\derivative{L}{y}\right]_{c} $ denote the derivatives for class $ c $ and $ \lbrace i = \argmax_{n} x_{n}\left[c\right]\rbrace $ indicates whether the classification score for class $ c $ is pooled from this instance $ i $.
+From the validation results reported in \cite{gkioxari2015contextual}, their model incorporating this MIL layer empirically improved the classification performance in PASCAL VOC action recognition challenge, although in-depth analysis over the influence of MIL is not provided.
+
+\subsection{Fusion}
+Finally, an independent classification score is produced by each branch of the fully connected layers. 
+As the final part of our model, a merging unit combines them into a single classification score, which will be passed through a Softmax layer to obtain the actual class probabilities. 
+Whereas R*CNN simply used sum merging, we implemented and empirically evaluated various of merging methods including sum, max, multiloss and weighted sum.
+The detail of each variation will be given in \autoref{chap:setup}, while the results and analysis will be presented in \autoref{chap:result}.
+
+
+\section{Human Object Detection}\label{sec:detection}
+\input{chapters/detection}
+
+\section{Merging Unit}\label{sec:fusion}
+Obvious, different semantic cue impact the understanding and interpretation of each individual type of actions with different weights.
+Hence, one main focus in this thesis is to find a sophisticated way to integrate them together.
+
+For the purpose, we propose 6 kinds of fusion methods.
+Assume we have $ C $ action classes and $ L $ semantic channels, the classification score generated by channel $ l $ is denoted as $ s_{l}\in \mathbb{R}^C $, then we have:
+\begin{enumerate}
+\item \textbf{sum}: the classification score of class $ c $ is the summation over all available cues.
+\begin{equation}
+s\left[c\right] = \sum_{l=1}^{L}s_{l}\left[c\right].
+\end{equation}
+In back-propagation, loss gradient is equally passed to all cues. Implicitly, this assumes that all cues have equal contributions to the final decision.
+\item \textbf{max}: instead of summing the classification scores, one can also apply max operation. 
+Intuitively, this is equivalent as picking the strongest cue for each action class as the final class representation.
+Recall the MaxPooling operation discussed in \ref{sec:cnnlayers}, during back-propagation gradient from upper layer is passed down only to the corresponding cue, from which the maximum value is pooled.
+As a result, each cue will be updated according to its actual contribution.
+Formally, 
+\begin{equation}
+s\left[c\right] = \max_{l=1}^{L}s_{l}\left[c\right].
+\end{equation}
+It should be noted, this fusion is equivalent to the MIL merge we use for object cue (see \autoref{sec:modelarch}). 
+In this case, results from different cues are instances in a bag.
+\item \textbf{weighted} The drawback of sum fusion is that it treats all cues equally across all action classes. 
+In reality, this is not true in most cases, e.g. person in "JumpingRope" has much higher relative importance than person in "HorseRace".
+To address the issue, we propose weighted fusion, namely
+\begin{equation}
+s\left[c\right] = \sum_{l=1}^{L}w_{l}[c]s_{l}\left[c\right],
+\end{equation}
+There are a total $ L\times C$ weights and $ w_{l}\left[c\right] $ is the weight of the $ l $-th cue for class $ c $.
+\item \textbf{cross-weighted}
+Moreover, we experiment with the cross-class joint weighting same as in \cite{xiong2015recognize}.
+In other words, the final classification score is determined by the classification results of all cues and all classes.
+This setting incorporates extra information from class confusions and exclusions. 
+For example, if a sample frame has strong response to "Kayaking" from scene channel, then a smaller weight should be assigned to "HorseRace" in person channel.
+Formally, the final score can be written as
+\begin{equation}
+s\left[c\right] = \sum_{l=1}^{L}\sum_{c'=1}^{C}w_{l}\left[c,c'\right] s_{l}\left[c'\right].
+\end{equation}
+There are in total $ L \times C \times C $ weights. 
+\item \textbf{multi-loss} 
+Besides the above fusion methods, we also explored with multi-tasking training scheme implemented in Fast-RCNN. 
+Classification using each semantic cue is regarded as a separate task.
+In forward pass, each cue generates a loss independently as illustrated in \autoref{fig:multiloss}, whose gradients are passed down through the corresponding fc branch and combined before the shared convolutional layer.
+For testing, we compute the final prediction via either summation or maximization.
+\item \textbf{multi-loss+}
+At last, as depicted in \autoref{fig:multiloss+} we combine the multi-tasking with fusion unit, where the choice fusion unit is determined by the result of above comparisons.
+While this architecture still uses the merged result as final classification decision, separate losses are used as constraints to guarantee single-cue performance.
+In order to emphasis the importance of merged result, we assign a higher weight to the merged loss. 
+As a result, the parameters will be updated more in favour of the merged result.
+\end{enumerate}
+
+\begin{figure}[h]
+\begin{subfigure}[b]{0.5\linewidth}
+\includegraphics[width=\columnwidth]{figures/multiloss}
+\subcaption{Multi-loss Fusion}\label{fig:multiloss}
+\end{subfigure}
+\begin{subfigure}[b]{0.5\linewidth}
+\includegraphics[width=\columnwidth]{figures/multiloss+}
+\subcaption{Multi-loss+ Fusion}\label{fig:multiloss+}
+\end{subfigure}
+\caption[Multiloss Fusion Variants]{Architectures for multi-loss fusion proposals.}
+\end{figure}

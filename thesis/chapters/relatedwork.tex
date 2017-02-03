@@ -1,0 +1,34 @@
+% !TEX root = ../thesis.tex
+
+% set counter to n-1:
+\setcounter{chapter}{1}
+
+\chapter{Related Work}\label{chap:relatedwork}
+Video-based action recognition has been intensely researched in the recent years owing to its abundant application values. However accurate action classification for realistic video sequences remains a challenging task. First of all, actions exhibit vast variability caused by view angle, background environment, as well as the action execution itself. More importantly, the perception and cognition of an action, even for human, is genuinely involving and complex. Often it requires high level abstraction and inference from other semantic hints. For this reason, effort has been made to use augmented input as complementary information for better classification. 
+
+\paragraph{Single Cue} For action recognition with, person has always been the most intuitive subject for action recognition. The very first attempts in action recognition used tracks of human body parts \cite{yacoob1998parameterized,fanti2005hybrid} or shape of the human body to describe motion. Since these approaches depend on very accurate person or pose detection, they were only suited for artificial settings. 
+As new realistic data were released, they were soon replaced by a variety of low-level local features for their robustness, among which especially noteworthy are feature descriptors such as 3D-SIFT \cite{scovanner20073}, HOF (Histogram of Optical Flow) \cite{laptev2008learning} and MBH (Motion Boundary Histogram) \cite{wang2011action} as well as features extractors such as STIP (space-time interesting points) \cite{laptev2005space} to DT (dense trajectories) \cite{wang2011action} and iDT (improved dense trajectories) \cite{wang2013action}.
+These low-level features, although not specifically articulate body motion, focus on points with strong motion signal, hence they are by design intended to characterize body motion.
+
+\paragraph{Cue Augmentation} In terms of cue augmentation, object and scene are the most common choice. \cite{moore1999exploiting}, one of the first attempts, jointly modeled the human and object movement in a belief network. 
+This was deepened in the work by \cite{gupta2007objects}, where they inferred object reaction in a graphical model, which in turn is used to discriminate confusion action classes. 
+In \cite{marszalek2009actions}, the author used augmented data collected from video scripts to infer scene information, which proved to be assisting or even dominating for many action categories. 
+\cite{ikizler2010object} exploited both scene and object cues.
+In order to handle imperfect human and object extractions, they adopted MIL (Multiple Instance Learning) framework in their system and trained global weights for each cue before performing an early fusion. 
+As a more extreme example, \cite{jain201515} classified each video frame as an object with a very large object/scene classifier trained on image data ImageNet \cite{ILSVRC15}. Using the classification scores as the sole feature, this method achieved competitive results.
+
+One drawback of these aforementioned approach lies in their dependency on reliable object and person detection (except \cite{marszalek2009actions} as it used external information source).  A few works worked around this issue by incorporating scene and objects in a more subtle way. For example \cite{ullah2010improving} and \cite{reddy2013recognizing}  integrated scene information by grouping local dense features from the whole frame in different regions obtained by applying different segmentation schemes.
+
+\paragraph{Cue Augmentation in Deep Neural Network} Contrary to conventional approaches, Deep Neural Network (DNN) is an End-2-End solution that trains a classifier from raw image or video input while simultaneously learning a holistic representation of the input in an unsupervised manner. As is demonstrated in some analytical works such as \cite{zeiler2014visualizing,mahendran2015understanding}for image classification task, it is able to abstract high-level semantic features.
+
+Cue fusion in DNN-based method for action recognition has attracted relatively less attention, partially because deep neural network is expected to encode semantic cues implicitly by itself. 
+However, as is often the case, providing explicit information and employing clear structure to DNN model can bring about significant improvement. Indeed, the first victory of deep learning in action recognition by \cite{simonyan2014two} owes to the direct supply of motion structure with optical flow input. 
+
+\cite{WuJWYXW15} trained 5 individual DNNs (spatial CNN, motion CNN, spatial LSTM, motion LSTM and audio CNN) and subsequently performed a late weighted fusion using externally trained weights. 
+However as this approach trains multiple neural networks, hence very computationally expensive and not well scalable.
+Moreover learning fusion weights demands an extra validation split from training set, shrinking the already small training data.
+
+Nonetheless a few of works in still-image scene classification and action recognition \cite{xiong2015recognize,gkioxari2015contextual}. 
+Among them R*CNN \cite{gkioxari2015contextual} is most related to our work.
+In their work they also leveraged an unified neural network architecture to incorporate person and object cues.
+Our work differs from R*CNN mainly in two folds: (1) no ground truth bounding boxes of human and objects are provided, we use advanced object detectors and efficient post-pocessing to make our system more flexible and general; (2) action recognition in video domain is more challenging, our proposed network has an additional stream with optical flow input.

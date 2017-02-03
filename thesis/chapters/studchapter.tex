@@ -1,0 +1,27 @@
+% !TEX root = ../thesis.tex
+\addtokomafont{paragraph}{\sffamily}
+
+\def\mychpstyleintl{%
+{\noindent\setlength{\tabcolsep}{0pt}\setlength{\arrayrulewidth}{2pt}%
+\begin{tabular}{c}
+\\[10ex]
+\begin{tabular}{lr}
+\begin{tabular}{p{0.6\linewidth}}
+\\
+\end{tabular}
+&
+\begin{tabular}{p{0.4\linewidth}}
+	\begin{flushright}
+\rightline{{%
+		\sffamily%
+		\fontseries{bx}%
+		\fontshape{n}%
+		\fontsize{100}{120}%choose baselineskip to be 1.2 times font size
+		\selectfont
+		\thechapter}}		
+	\end{flushright}
+
+\end{tabular}
+\end{tabular}\\[300pt]
+\end{tabular}
+}}

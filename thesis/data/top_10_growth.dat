@@ -1,0 +1,11 @@
+id  plus    name    flowname    flowplus
+0   0.1000  JugglingBalls PlayingPiano    0.1000
+1   0.1020  CricketShot LongJump    0.1026
+2   0.1176  RopeClimbing JumpingJack 0.1071
+3   0.1250  TrampolineJumping FrisbeeCatch    0.1143
+4   0.1351  Lunges Haircut 0.1622
+5   0.1364  ApplyEyeMakeup Archery 0.1667
+6   0.1429  TaiChi CliffDiving 0.1786
+7   0.1818  PizzaTossing BreastStroke    0.1837
+8   0.1842  JumpRope TaiChi  0.1892
+9   0.2162  FrontCrawl FrontCrawl  0.1944

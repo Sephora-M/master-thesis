@@ -1,0 +1,452 @@
+% !TEX root = ../thesis.tex
+In this section, we describe our method for extracting reliable person and object bounding boxes.
+
+\subsection{Object Detector Faster-RCNN}
+The bounding boxes for objects and persons are extracted using the state-of-the-art object detector Faster-RCNN (Regional Convolutional Neural Network)\cite{ren2015faster}. 
+Faster-RCNN is purely CNN-based state-of-the-art object detector that provides an end-to-end near real-time solution for object detection.
+
+Faster-RCNN is an upgrade of Fast-RCNN. Compared to the latter, it significantly improves test-time speed by integrating regional object proposal into the system. As can be seen in the \autoref{fig:faster-rnn}, Faster-RCNN consists of two parts. The first part, \textit{Regional Proposal Net} (\textit{RPN}) takes an image as input and generates as output a set of rectangular regions with high objectness, called \textit{proposals}. 
+The second part of the system, \textit{Detection Net} (DN), uses these proposals to compute the object location and predict the object class.
+
+In both parts, object locations are parameterized as a 4-tuple  $ \mathbf{t} $, which specifies a scale-invariant translation and log-space height/width shift relative to a reference box $ a $ \cite{girshick2014rich}.
+More specifically, the parameterization $ \mathbf{t} = \left(t_{x}, t_{y}, t_{w}, t_{h}\right) $ is defined as
+\begin{equation}
+\begin{aligned}\label{eq:bbtuple}
+t_{x} &= (x-x_{a})/w_{a}\\
+t_{y} &= (y-y_{a})/y_{a}\\
+t_{w} &= \log(w/w_{a})\\
+t_{h} &= \log(h/h_{a}),
+\end{aligned}
+\end{equation}
+where $ x, y, w$ and $ h $ denote the center coordinates, width and height of a bounding box.
+
+While both parts can be deployed as a standalone network for its own task, Faster-RCNN proposes a unified network that further improves test-time speed. 
+More concretely, RPN and DN share the same convolutional layers. 
+At test-time, an input image only needs to go through the convolutional layers once.
+The output of the last shared convolutional layer is first used in RPN for proposal generation and then, together with RPN's output, in DN for detection.
+
+
+The convolutional layers adopt the architecture in VGG16 (see \autoref{tab:vgg16}). The total stride at the last convolutional layer adds up to 16, i.e. an input image of the size $ W\times H $ will generate a $ \lceil \frac{W}{16}\rceil \times \lceil\frac{H}{16}\rceil \times K $ feature map, where $ K $ denotes the number of channels and equals $ 512 $ in VGG16.
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{figures/fasterrcnn.pdf}
+	\caption{Architecture of Faster-RCNN.}
+	\label{fig:faster-rnn}
+\end{figure}
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.7\linewidth]{figures/fasterrcnn-rpn.pdf}
+	\caption[Proposal generation in Faster-RCNN]{Proposal generation in Faster-RCNN (slightly modified from source \cite{ren2015faster})}
+	\label{fig:rpn}
+\end{figure}
+\paragraph{RPN} The scheme of proposal generation is depicted in \autoref{fig:rpn} (slightly modified from source \cite{ren2015faster}). 
+It takes an input image and generates a set of rectangular regional proposals and 2-tuples corresponding to their binary (foreground/background) prediction.
+
+To generate proposals, a lower-dimensional feature vector $ \mathbf{h}\in \mathbf{R}^d $ is first computed from a small $ n \times n $ neighbourhood of the convolutional feature map (ref the sliding window in \autoref{fig:rpn}) via inner product.
+Formally, for an input feature map $ \x $ and weight $ \w $, the $ d $-th entry of the output lower-dimensional vector is computed as
+\begin{equation}
+\mathbf{h}\left[d\right] = \sum_{\left(w,h\right)\in W,\, k}\x\left[w,h,k\right]\w_{d}\left[w,h,k\right],\label{eq:rpnlowd}
+\end{equation}
+where $ W $ is the sliding window, $ w $, $ h $ and $ k $ denote the width, height and channel index respectively.
+
+The resultant feature vectors form representations of the corresponding image patch in the input image.
+These feature vectors are then fed into two branches of fully connected layers, \textit{cls} and \textit{reg}, for classification (foreground/background) and regression (coordinates of bounding boxes) respectively.
+
+To be specific, at each position of the feature map, $ k $ proposal bounding boxes are generated. 
+Those are parameterized relative to $ k $ "anchors", which serve as references for the actual proposals.
+Anchors are composed of rectangular regions of various scales and ratios so as to detect objects under scale and size variation.
+Faster-RCNN implements 3 scales and 3 ratios, yielding a total of 9 anchors at each position.
+In the fully connected layers, $ k $ inner product are carried out independently so that the predictions for each anchor can be computed simultaneously, i.e.
+\begin{align}
+\mathbf{y}_{cls}[i,k] & = \mathbf{h}^T\w^{cls}_{ik}, \intertext{where $ i\in \lbrace 0,1 \rbrace $ denotes bg and fg labels and}
+\mathbf{y}_{reg}[i,k] & = \mathbf{h}^T\w^{reg}_{ik},\label{eq:rpnreg}
+\end{align}
+where $ i\in \lbrace 0,1,2,3 \rbrace $ denotes the four parameters defining the location of bounding boxes.
+
+On implementation level, since the weights in \autoref{eq:rpnlowd}-\autoref{eq:rpnreg} are shared spatially across all anchor positions, these two steps of inner product can be efficiently realized using two consecutive convolutional layers with kernel size $ n $ and $ 1 $ respectively.
+
+The use of anchor is a novel solution to address multi-scale problem. By creating an individual reference for each scale-ratio combination, it makes it possible to train multi-scale filters simultaneously on a single feature, which serves as the key ingredient for RPN's computation efficiency.
+
+RPN adopts multi-task training same as in DN, i.e. the loss function is a weighted sum of the classification loss $ L_{cls} $ and regression loss $ L_{reg} $. With $ y_{i} $, $ \hat{y}_{i} $, $ \mathbf{t}_{i} $ and $ \hat{\mathbf{t}}_{i} $ denoting the predicted class, groundtruth class, predicted object location (defined as \autoref{eq:bbtuple}) and the groundtruth object location of an anchor $ i $, the loss of the network can be written as
+\begin{equation}
+L = \dfrac{1}{N_{cls}}\sum_{i}L_{cls}\left(y_{i},\hat{y}_{i}\right) + \lambda \dfrac{1}{N_{reg}}\sum_{i}\hat{y}_{i}L_{reg}\left(\mathbf{t}_{i}, \hat{\mathbf{t}}_{i}\right).
+\end{equation}
+The classification loss $ L_{cls} $ is the binary softmax loss (see \autoref{eq:softmaxloss}). 
+The regression loss $ L_{reg} $ is the smoothed L1 loss introduced in \cite{girshick2015fast}. It is defined as
+\begin{align}\label{eq:smoothl1}
+L_{reg}\left(\mathbf{t}, \hat{\mathbf{t}}\right) & = \sum_{d=0}^{4}f\left(\mathbf{t}\left[d\right] - \hat{\mathbf{t}}\left[d\right]\right),
+\intertext{where $ f $ is the SmoothL1Loss defined as}
+f\left(x\right) & = 
+\begin{cases}
+0.5x^2 & \text{if $ \lvert x \rvert <1 $}\\
+\lvert x \rvert - 0.5 & \text{otherwise}
+\end{cases}.
+\end{align}
+While $ L_{cls} $ is comprised of both negative and positive samples, $ L_{reg} $ is contributed only by the positive ones. 
+These two terms are normalized with $ N_{cls} $ and $ N_{reg} $ and weighted with hyperparameter $ \lambda $ to ensure balance between the two losses. 
+In the current implementation $ \lambda = 10 $, $ N_{cls} $ and $ N_{reg} $ are respectively implemented as the minibatch size (total number of positive and negative samples per image) and the number of anchor positions.
+
+For better training efficiency, samples are constructed with care. 
+First of all, to avoid fuzzy samples, labels are assigned using the following rule:
+\begin{equation}
+\hat{y}_{i} = \begin{cases}
+1 & \parbox{0.4\textwidth}{if IoU$ >0.7 $ \\ or \\ $ i $ has the highest IoU with a gt bb}\\
+0 & \text{if IoU} <0.3
+\end{cases},
+\end{equation}
+Moreover, since negative samples are dominating, in order to avoid bias towards the negative ones, the samples are assembled with a pos:neg ratio up to 1:1.
+\paragraph{DN}
+The structure of Detection Network (shown in \autoref{fig:fast-rnn} \cite{girshick2015fast}) remains the same as in Fast-RCNN.
+
+After the last convolutional layer, regional proposals generated from RPN will be used as ROIs in the RoiPooling layer. 
+As explained in \autoref{sec:modelarch}, this layer creates a feature map with fixed spatial dimension (e.g. $ 7 \times 7 $) from a rectangular region of arbitrary spatial size. For each proposal, an feature map is generated and are passed to the successive layers as an individual sample.
+Two fully connected layers attached on top of the RoiPooling layer compute a large feature vector, which is fed to classification and regression branches in the same fashion as in RPN.
+
+In the loss function, the binary softmax loss is replace by a $ K+1 $ softmax loss, for $ K $ object classes and a catch-all background class. Meanwhile, slight different implementation is taken for the normalizers and weight $ \lambda $: while in DN $ \lambda =1 $, the normalizer is unified between two terms and is implemented as the minibatch size.
+\begin{equation}
+L = \dfrac{1}{N}\sum_{i}L_{cls}\left(y_{i},\hat{y}_{i}\right) + \lambda \dfrac{1}{N}\sum_{i}\hat{y}_{i}L_{reg}\left(\mathbf{t}_{i}, \hat{\mathbf{t}}_{i}\right).
+\end{equation}
+\begin{figure}
+\centering
+\includegraphics[width=0.7\linewidth]{figures/fast-rnn.eps}
+\caption[Detection Network of Faster-RCNN]{Architecture of the Detection Network in Faster-RCNN is completely inherited from Fast-RCNN. The ROIs are generated from Regional Proposal Network. (source \cite{girshick2015fast})}
+\label{fig:fast-rnn}
+\end{figure}
+\paragraph{Training}
+The authors of Faster-RCNN has published their trained model for PASCAL VOC detection challenge \cite{pascal-voc-2012}. which contains 20 object classes, including:
+person, bird, cat, cow, dog, horse, sheep, aeroplane, bicycle, boat, bus, car, motorbike, train, bottle, chair, dining table, potted plant, sofa, tv/monitor.
+
+Clearly, these 20 classes are far from adequate to serve our purpose, not to mention many of them are inapt for our target action classes (e.g. sheep, potted plant).
+
+Hence we train our own model with expanded object categories.
+These are handpicked from ILSVRC2014 \cite{ILSVRC15} (200 categories) and PASCAL VOC \cite{pascal-voc-2012} (20 categories) detection challenge, with exclusion in food, most animals (except horse) and small objects.
+This yields 118 categories in total and the complete training data is comprised of 196,780 images.
+
+Since detection network assumes fixed proposals during training, Faster-RCNN adopted a staged training method to achieve layer sharing. This method can be summarized into four steps:
+\begin{enumerate}
+\item Train a RPN (\texttt{RPN0}) initialized from pre-trained ImageNet VGG16 model \cite{simonyan2014very}.
+\item Use \texttt{RPN0} to generate proposals for the same training data;
+\item Train a DN (\texttt{DN0}) initialized (again) from ImageNet VGG16 using the proposals generated from the previous step.
+\item Train a RPN (\texttt{RPN1}) by fine-tuning the fully connected layers of \texttt{DN0}.
+\item Use \texttt{RPN1} to generate proposals from the training data again.
+\item Train a DN (\texttt{DN1}) by fine-tuning the fully connected layers of \texttt{DN0} using the newly generated proposals.
+\item \texttt{RPN1} and \texttt{DN1} yield the final Faster-RCNN model.
+\end{enumerate}
+
+In this thesis, we adopted this staged training method. However, it is worth mentioning, by the time of writing, an update has been published that allows joint training of RPN and DN. 
+In this method the proposals generated from RPN branch are fed immediately as pre-computed input into the RoiPooling layer of DN branch \textit{in each iteration step}.
+While the proposals in fact are input dependent, this approach does not compute their gradient in back-propagation (RoiPooling function is not w.r.t proposal differentiable), hence called \textit{Approximate joint training}.
+Despite of that, this method yields similar results as the staged training and at the same time reduces the training time by $ 25\% \sim 50 \%$.
+\subsection{Human Track Extraction}\label{sec:humantrack}
+Compared to ImageNet data, frame images in video data have lower resolution and large motion blur. The objects of interest are subject to greater appearance variation as well as temporary occlusion.
+Consequently, person detection is inevitably less reliable in video frames. 
+
+Meanwhile, in realistic video datasets videos often contain irrelevant person detections. If used crude, they will add significant amount noise to the training data and consequently increase training difficulty or even affect convergence. 
+
+Thus before deploying the detection results as our model input, we need to pre-process the raw detections so as to
+\begin{enumerate}
+\item filter out incorrect and irrelevant detections;
+\item recover detection failures in individual frames;
+\item refine location of bounding boxes.
+\end{enumerate}
+
+For these proposes, we propose a simple yet powerful algorithm using the idea of dynamic programming.
+
+We start by characterizing "action relevant" person detections. Contrary to spurious detections, actual action performer displays high overall detectability (except sporadic detection failure) as well as high spatial and appearance consistency in sequential frames. 
+In other words, the bounding boxes locating an action performer should form a smooth and continuous "tube" across frames.
+\begin{figure}
+\centering
+\begin{subfigure}{0.25\textwidth}
+\includegraphics[width=\textwidth, trim={2cm 1.5cm 0cm 1cm}, clip]{figures/soccerpenalty_multi.png}
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}
+\includegraphics[width=\textwidth, trim={2cm 1.5cm 0cm 1cm}, clip]{figures/soccerpenalty_multi1.png}
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}
+\includegraphics[width=\textwidth, trim={2cm 1.5cm 0cm 1cm}, clip]{figures/soccerpenalty_multi2.png}
+\end{subfigure}%
+\begin{subfigure}{0.25\textwidth}
+\includegraphics[width=\textwidth, trim={2cm 1.5cm 0cm 1cm}, clip]{figures/soccerpenalty_multi3.png}
+\end{subfigure}
+\caption[Example of multiple person detections]{An example where incorrect (advertisement) or irrelevant (jury) detections are consistently given by the detector with high confidence. In this case, we use optical flow to pick out the action performer.}\label{fig:multi}
+\end{figure}
+However, this criterion alone does not suffice. As is shown in \autoref{fig:multi}, wrong detections are often generated consistently with high certainty. 
+Nonetheless, while those mostly remain still with the elapse of time, true action protagonist distinguish himself with high motion saliency. 
+
+Inspired by these observations, our task becomes finding a path via raw detections along time axis with the highest detection confidence, temporal consistency and motion saliency. 
+These properties can be well expressed quantitatively.
+The detectability can be written using the classification probability given by the object detector; 
+temporal consistency in location is reflected in form of Intersection over Union (IoU) and the appearance consistency in form of template matching metrics such as Normalized Cross Correlation (NCC); 
+motion saliency can be described in terms of optical flow.
+Consider each raw detection as a node and the quantitative metrics as costs (or scores) for connections, this problem can be stated as a shortest path problem and solved efficiently with dynamic programming.
+
+Formally, we define the following problem:
+\begin{itemize}
+\item Given a video of $ T $ frames and the person bounding boxes of this video, we divide the video into $ N = \lfloor\frac{T}{T_{0}}\rfloor$ intervals the length of $ T_{0} $. 
+The bounding boxes within the $ n$-th interval construct the state space 
+\[ b_{n}^{i}\in\mathcal{B}_{n} \text{ with } n\in\lbrace1,2,\dots, N\rbrace, \] 
+$ \mathcal{B}_{n} = \emptyset $ when no person is detected in interval $ n $.
+\item the control input $ u_{n} $ at step $ n $ is the choice of bounding box in step $ n+1 $,  while the input space $ \mathcal{U_{n}} $ includes all raw detections and does not depend on the current state, i.e.
+\begin{align*}
+b_{n+1} & = f_{k}\left(u_{k}\right) \\
+u_{k} & \in \lbrace 1, 2, \dots, \lvert \mathcal{B} \rvert\rbrace.
+\end{align*}
+\item the score $ s_{ij} $ for connecting two bounding boxes $ b^{i}_{n} $ and $ b^{j}_{n+1} $ consecutive intervals $ n $ and $ n+1 $ is defined as
+\begin{equation}
+s_{ij}\left(b^{i}_{n}, b^{j}_{n+1}\right) = s_{prob}\left(b^{j}_{n+1}\right) + s_{motion}\left(b^{j}_{n+1}\right)+ s_{IoU}\left(b^{i}_{n}, b^{j}_{n+1}\right) + s_{size}\left(b^{j}_{n+1}\right).
+\end{equation}
+\begin{itemize}
+\item $ s_{prob} $ is the probability with which bounding box $ b_{n+1}^{j} $ is classified as person, describing detection certainty
+\begin{equation}
+s_{prob}\left(b^{j}_{n+1}\right) = \Pr\left(c^{j}=\text{person}|b^{j}_{n+1}\right).
+\end{equation} 
+\item $ s_{IoU} $ is a function of IoU of the two concerned bounding boxes,  aimed to reflect the temporal consistency
+\begin{equation}
+s_{IoU}\left(b^{i}_{n}, b^{j}_{n+1}\right) = 
+\begin{cases}
+IoU\left(b^{i}_{n}, b^{j}_{n+1}\right) & \text{if } IoU\left(b^{i}_{n}, b^{j}_{n+1}\right)>0\\
+-c \text{ with } c>0 & \text{otherwise}.
+\end{cases}.
+\end{equation}
+\item $ s_{motion} $ is the average of the normalized magnitude of optical flow in area $ b_{n+1}^{j} $, describing motion saliency 
+\begin{equation}
+s_{motion}\left(b^{j}_{n+1}\right) = \dfrac{1}{\lvert b_{n+1}^{j}\rvert}\sum_{\left(x,y\right)\in b_{n+1}^{j}}\lVert o\left(x,y\right) \rVert
+\end{equation}
+\item $ s_{size}\left( b^{j}_{n+1}\right) $ puts additional penalty on small bounding boxes. This proves to be useful in complex scenes since the action performer is usually the most prominent among all detected person.
+\begin{equation}
+s_{size}\left(b^{j}_{n+1}\right) = f\left( \dfrac{\vert b^{k}_{n+1}\rvert}{\max_{k} \vert b^{k}_{n+1}\rvert}\right),
+\end{equation}
+where $ f $, shown in \autoref{fig:non-linearf}, is a sigmoid-like non-linear mapping to suppress small regions, while preserving the large ones.
+A sigmoid function has the form
+\begin{equation}
+f\left(x\right)=\dfrac{L}{1+\exp\left(-k\left(x-x_{0}\right)\right)}.
+\end{equation}
+In our implementation, we set the parameters to
+\begin{equation}
+x_{0}=0.5 \quad k = 12 \quad L=0.5.
+\end{equation}
+While $ x $ and $ k$ are set so to keep the x-span of the ``S'' shape within $ \left[0,1\right] $, so as to comply with the input range, $ L $ is determined from empirical test results.
+\end{itemize}
+\item Finally we consider the following optimization problem:
+\begin{equation}
+\max_{\pi}\left(\sum_{n=1}^{N}s_{ij}\left(b^{i}_{n}, b^{j}_{n+1}\right)\right),
+\end{equation}
+where $ \pi $ denotes a sequence of bounding boxes selected from each interval.
+\end{itemize}
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+	\begin{axis}[
+	axis lines=middle,
+	ymin=0,ymax=1,
+	xmin=0,xmax=1,
+	xlabel={relative size},
+	]
+	\addplot[mark=none, samples=200, smooth] plot{1/(1+exp(-12*(x-0.5)))};
+	\end{axis}
+	\end{tikzpicture}
+	\caption[Size penalty for action performer extraction]{Although the relative size of a detected person gives hint to his relevancy, our experiment suggests this relation is not linear. Hence we apply a sigmoid-like threshold function to suppress only very small bounding boxes.}
+	\label{fig:non-linearf}
+\end{figure}
+
+This problem can be solved efficiently using dynamic programming by applying \autoref{eq:recursion} from \autoref{sec:dp} ($ \max $ instead of $ \min $). 
+
+The optimal policy $ \pi^{*} $ is a sequence of $ N $ bounding boxes. The frames, from which the bounding boxes are chosen, form a set of \textit{key frames}. From these key frames, we apply a linear ex-interpolation on the four coordinates of the bounding boxes to obtain a smooth track of the person of interest in the whole video span. 
+
+There is one noteworthy design choice in our method. 
+As an alternative to the natural choice to treat each frame as a time step, we group multiple consecutive frames to form a single step, thus implicitly increase the state space at each step $ \mathcal{B}_{n} $.
+As a result, we are able to "look ahead" when no feasible solution exist at current frame.
+This introduced flexibility is the key to recover detection failures and correct faulty detections.
+
+An example of resulted person track is shown in \autoref{fig:persontrack}. As we can see, our method successfully recognizes the action performer among multiple people detections and fix detection failures even under large temporal gap.
+
+\begin{figure}[h]
+  \centering
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_0.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_3.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_4.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_5.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_6.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_8.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_9.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_raw_10.png}
+\end{subfigure}
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_0.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_3.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_4.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_5.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_6.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_8.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_9.png}
+\end{subfigure}%
+\begin{subfigure}{0.12\textwidth}
+	\includegraphics[width=\textwidth,trim={2cm 1cm 2cm 1cm},clip]{figures/person_tube_10.png}
+\end{subfigure}
+\caption[An sample result of action performer extraction]{An example of the resulted person track using our algorithm. 
+Compared to the raw detections (upper row), our method is able to filter out noisy detections and recover missing frames, despite detection failures over a long period and confident detections of irrelevant people.}\label{fig:persontrack}
+\end{figure}
+
+Although in most cases we are able to locate the action performer from the optimal track determined by our algorithm, exceptions reside especially in action classes where multiple people are involved or overlapped. 
+In this case, we need to find another track that is independent from the previous one. 
+We stress independent here, since in the concerned situation the interested person tracks are often intertwined.
+As a result, simply returning the second optimal solution from dynamic programming would have resulted in a mixed track, partially containing the already extracted one (see \autoref{fig:interception} for a concrete example).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+[>=stealth]
+\matrix (m) [
+matrix of math nodes, 
+nodes={draw, circle, minimum size=1cm},
+row 1/.style={nodes={teal}},
+row 3/.style={nodes={red}},
+row sep={1cm,between origins},
+column sep={1cm}
+]
+{
+a_{1} & a_{2} &  & a_{4} \\
+ &  & |[draw=red, pattern=north east lines ,pattern color=teal]| ab_{3}& \\
+b_{1} & b_{2} &  & b_{4}\\
+};
+\node [below=of m-3-1](t1) {step $ 1 $};
+\node [below=of m-3-2](t2) {step $ 2 $};
+\node [right=of t2](t3) {step $ 3 $};
+\node [below=of m-3-4](t4) {step $ 4 $};
+\draw [->, teal] ([xshift=-1cm]m-1-1.west) -- (m-1-1) --node[above] {4.5} (m-1-2) -- node[above] {3.8} (m-2-3) -- node[above] {1.8} (m-1-4);
+\draw [->, red] ([xshift=-1cm]m-3-1.west) -- (m-3-1) -- node[above] {4.3}(m-3-2) -- node[above] {3.5} (m-2-3) -- node[above] {1.5} (m-3-4);
+\end{tikzpicture}
+\caption[Finding the multiple person tracks]{Illustration of two person tracks that are intercepted at one frame. 
+Red and green represent the tracks of person $ a $ and $ b $, and the green one is apparently the optimal track. 
+However if we want to extract person $ b $ additionally by simply backtracking from the node with the second highest score (in this case $ b_{1} $) in step $ 1 $, we will end up with the track $ b_{1}-b_{2}-a_{3}-b_{4} $.} \label{fig:interception}
+\end{figure}
+
+We solve this problem by eliminating the first person track (and bounding boxes that highly overlap with it) from the available raw detection, while preserving the interception bounding box (the shadowed node in \autoref{fig:interception}). 
+From this reduced state space, we repeat dynamic programming algorithm to extract the second person track. An example of the resulting person tracks is shown in \autoref{fig:top2person}.
+\begin{figure}
+\centering
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\textwidth]{figures/benchpress.jpg}
+\end{subfigure}%
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\textwidth]{figures/benchpress2.jpg}
+\end{subfigure}%
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\textwidth]{figures/benchpress3.jpg}
+\end{subfigure} 
+\caption[Multiple independent person tracks]{An example where multiple individual person tracks, partially overlapping, are extracted.}\label{fig:top2person}
+\end{figure}
+
+The complete algorithm is summarized in \autoref{alg:persontrack}. Notice that small adaptation is implemented to handle intervals void of detections ($ \mathcal{B}_{n} = \emptyset $). 
+Additionally, score-filtering as well as early termination condition are added for the sake of computation efficiency.
+
+\begin{algorithm}[b]
+\small
+	\caption{Top-K Person Track Extraction}
+	\label{alg:persontrack}
+	\begin{algorithmic}[1]
+		\State \textbf{Output}: $ metricThreshold $
+		\State \textbf{Input:} 
+		\NewLine $ T $ RGB video frames, 
+		\NewLine $ 2T $ flow images, 
+		\NewLine $ T $ sets of bounding boxes from raw person detection $\lbrace \mathcal{B}_{t} \rbrace_{1}^{T}$
+		\If{$ p\left(person|b\right) < s_{min}$} \Comment{Filter very uncertain detections}
+		\State remove $ b $ from $\lbrace \mathcal{B}_{t} \rbrace_{1}^{T}$
+		\EndIf
+		\State \textbf{Parameter}: $ T_{0} $, $ s_{min} $, $ K $
+		\For{$ 1 $ to $ K $} \Comment{Top-K person tracks}
+		\State group $\lbrace \mathcal{B}_{t} \rbrace_{1}^{T}$ into $ \lfloor \frac{T}{T_{0}}\rfloor $ intervals, $ \lbrace \mathcal{B}_{i}\rbrace_{1}^{N} $
+		\State remove empty intervals and get $ \lbrace \mathcal{B}'_{i}\rbrace_{1}^{N'}\, s.t. \mathcal{B}'_{i} \not = \emptyset$
+		\If {$ N' \leq \frac{N}{2} $}
+			\Break
+		\EndIf
+		\Procedure{Dynamic Programming}{flow, $ \lbrace \mathcal{B}'_{i}\rbrace_{1}^{N'}$}
+		\State $ J_{N'}\left(b_{N'}^{i}\right) = s_{prob}\left(b^{i}_{N'}\right) + s_{motion}\left(b^{i}_{N'}\right)+ s_{size}\left(b^{i}_{N'}\right).$
+		\Repeat
+		\State Apply dynamic programming recursion:
+		\NewLine $  J_{n}\left(b_{n}^{i}\right) = \max_{j} \left(s_{ij}\left(b_{n}^{i}, b_{n+1}^{j}\right) +  J_{n+1}\left(b_{n+1}^{j}\right)\right)$
+		\NewLine $ \mu_{n}^{*}\left(b_{n}^{i}\right) = \argmax_{j} \left(s_{ij}\left(b_{n}^{i}, b_{n+1}^{j}\right) +  J_{n+1}\left(b_{n+1}^{j}\right)\right) $
+		\Until {$ k=1 $}
+		\If {$ \max_{i} J_{1}\left(b_{1}^{i}\right) < 0$} \Comment{soft constraint}
+		\Break
+		\EndIf
+		\State forward trace $ \lbrace \mu_{n}^{*}\rbrace_{1}^{N'}$ to get $ \pi^{*} = \lbrace b_{1}^{*}, b_{2}^{*}, \dots b_{N'}^{*}\rbrace$
+		\EndProcedure
+		\State linear ex-interpolate from $ \pi^{*} $ to get $ \pi^{**} = \lbrace b_{t}^{*}\rbrace_{1}^{T}$
+		\LineComment{remove found person track according to \autoref{fig:interception}}
+		\For{$t = 1 $ to $ T $}
+		\If{$ IoU\left(b_{t}^{i}, b_{t}^{*}\right) > 0.8 $  \textbf{and} $\not\exists j\not = k, \, s.t. \mu(b_{t-1}^{j}) = \mu(b_{t-1}^{k}) =  b_{t}^{i} $}
+		\State remove $ b_{t}^{i} $ from $ \mathcal{B}_{t} $
+		\EndIf
+		\EndFor
+		\EndFor
+	\end{algorithmic}
+\end{algorithm}
+
+\subsection{Object Filtering}\label{sec:objectfilter}
+Due to much larger variance and complexity presented in video, meanwhile refrained by the number of target object categories, detection results for objects are inevitably less reliable than for human. 
+On the other hand, drawing a clear line between relevant and irrelevant objects is not possible. 
+As a matter of fact, as mentioned in \cite{jain201515}, while the existence of certain object categories matter, the absence of them provides useful information as well.
+While manually matching object categories with action classes is feasible, such approach is not suited for general scenarios.
+
+\begin{figure}
+\centering
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\columnwidth]{figures/obj_detect2.png}
+\end{subfigure}
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\columnwidth]{figures/obj_detect3.png}
+\end{subfigure}
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\columnwidth]{figures/obj_detect5.png}
+\end{subfigure}
+\caption[Object detection examples]{Examples of object detection results}\label{fig:objdetection}
+\end{figure}
+However as the examples in \autoref{fig:objdetection} shows, the classification probability is usually a good indicator on how substantial the detected object is.
+Meanwhile the size of the object and its distance to human gives important hints to the relevance of the object.
+
+From these observations, we first eliminate all objects whose largest prediction probability lower than $ 0.1 $ then we exclude bounding boxes with length smaller than $ 20 $ pixels.
+In the frames existence of any actor, we further filter out objects that do not overlap with any detected action performer.
+The remaining detected objects comprise ROIs for object channel.
+
+In \autoref{fig:filteredbb}, we show some examples of filtered object detections.
+\begin{figure}
+\centering
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\columnwidth]{figures/netinput.png}
+\end{subfigure}
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\columnwidth]{figures/netinput_hammer.png}
+\end{subfigure}
+\begin{subfigure}{0.3\linewidth}
+\includegraphics[width=\columnwidth]{figures/netinput_stillring.png}
+\end{subfigure}
+\caption[Examples of Bounding Box Inputs]{Examples of filtered bounding boxes.}\label{fig:filteredbb}
+\end{figure}

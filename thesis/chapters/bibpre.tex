@@ -1,0 +1,28 @@
+% !TEX root = ../thesis.tex
+
+% Stripped from acm siggraph bst and cls
+\makeatletter
+
+% no labels in bibliography.
+%\def\@biblabel#1{}
+
+%\newlength{\bibhang}
+%\setlength{\bibhang}{1em}
+
+% Change in-bibliography biberence style
+%\def\thebibliography#1{%
+%  \section*{%
+ %   \bibname\@mkboth{\sl\uppercase{\bibname}}{\sl\uppercase{\bibname}}}
+  %\list{\relax}{\setlength{\labelsep}{0em}
+   %             \setlength{\itemindent}{-\bibhang}
+    %            \setlength{\leftmargin}{\bibhang}}
+ % \def\newblock{\hskip .11em plus .33em minus .07em}
+ % \sloppy\clubpenalty4000\widowpenalty4000
+ % \sfcode`\.=1000\relax}
+
+% Change in-document citation styles
+\let\@internalcite\cite
+\def\cite{\def\citename##1{##1}\@internalcite}
+\def\shortcite{\def\citename##1{}\@internalcite}
+
+\makeatother

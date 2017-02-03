@@ -1,0 +1,277 @@
+% !TEX root = ../thesis.tex
+
+\chapter{Appendix}
+\section{Categorization of UCF101}
+\begin{table}[h]
+\centering
+\begin{tabular}{p{0.2\linewidth}|p{0.7\linewidth}}
+\hline
+Body Motion (\textit{P}) & ApplyEyeMakeup, ApplyLipstick, BabyCrawling, Basketball, BodyWeightSquats, BoxingSpeedBag, BrushingTeeth, Haircut, HandstandPushups, HandstandWalking, HeadMassage, HulaHoop, JugglingBalls, JumpingJack, JumpRope, Lunges, PullUps, PushUps, RopeClimbing, SalsaSpin, ShavingBeard, TaiChi, WallPushups, YoYo \\ \hline
+Human-Object Interaction (\textit{P-O}) & Archery, BenchPress, Biking, BlowDryHair, BlowingCandles, BoxingPunchingBag, CleanAndJerk, Drumming, Hammering, HorseRiding, Knitting, Mixing, Nunchucks, PizzaTossing, PlayingCello, PlayingDaf, PlayingDhol, PlayingFlute, PlayingGuitar, PlayingPiano, PlayingSitar, PlayingTabla, PlayingViolin, SoccerJuggling, Typing, WalkingWithDog\\ \hline
+Body Motion \newline in specific Scene (\textit{P-S})& BandMarching, BasketballDunk, BreastStroke, CliffDiving, CricketBowling, CricketShot, Diving, Fencing, FieldHockeyPenalty, FloorGymnastics, FrisbeeCatch, FrontCrawl, GolfSwing, HammerThrow, HighJump, IceDancing, JavelinThrow, LongJump, MilitaryParade, Punch, RockClimbingIndoor, Shotput, SkyDiving, SumoWrestling, Surfing, ThrowDiscus, VolleyballSpiking \\ \hline
+Human-Object \newline Interaction \newline in specific Scene (\textit{P-O-S}) & BalanceBeam, BaseballPitch, Billiards, Bowling, CuttingInKitchen, HorseRace, Kayaking, MoppingFloor, ParallelBars, PoleVault, PommelHorse, Rafting, Rowing, SkateBoarding, Skiing, Skijet, SoccerPenalty, StillRings, Swing, TableTennisShot, TennisSwing, TrampolineJumping, UnevenBars, WritingOnBoard\\ \hline
+\end{tabular}
+\caption[Action categorization according to semantic cue]{Categorization of action classes in UCF101 dataset according to their semantic composition.}\label{tab:101categories}
+\end{table}
+\newpage
+\section{Object Categories in Faster-RCNN}
+\footnotesize
+\begin{multicols*}{4}
+\let\mcnewpage=\newpage
+\makeatletter
+\renewcommand\newpage{%
+        \if@firstcolumn
+                \hrule width\linewidth height0pt
+                \columnbreak
+        \else
+                \mcnewpage
+        \fi
+}
+\makeatother
+\tablehead{id & Name \\\hline}
+\begin{supertabular}{c|c}
+\shrinkheight{-.3em}
+%id  & Name \\
+1   & accordion \\
+2   & airplane \\
+3   & axe \\
+4   & baby bed \\
+5   & backpack \\
+6   & balance beam \\
+7   & band aid \\
+8   & baseball \\
+9   & basketball \\
+10  & bathing cap \\
+11  & beaker \\
+12  & bench \\
+13  & bicycle \\
+14  & bookshelf \\
+15  & bow \\
+16  & bowl \\
+17  & brassiere \\
+18  & bus \\
+19  & can opener \\
+20  & car \\
+21  & cart \\
+22  & cello \\
+23  & chain saw \\
+24  & chair \\
+25  & cocktail shaker \\
+26  & coffee maker \\
+27  & computer keyboard \\
+28  & computer mouse \\
+29  & corkscrew \\
+30  & croquet ball \\
+31  & cup or mug \\
+32  & diaper \\
+33  & digital clock \\
+34  & dishwasher \\
+35  & drum \\
+36  & dumbbell \\
+37  & electric fan \\
+38  & face powder \\
+39  & flower pot \\
+40  & frying pan \\
+41  & golf ball \\
+42  & golfcart \\
+43  & guitar \\
+44  & hair dryer \\
+45  & hair spray \\
+46  & hamburger \\
+47  & hammer \\
+48  & harmonica \\
+49  & harp \\
+50  & hat with a wide brim \\
+51  & helmet \\
+52  & horizontal bar \\
+53  & horse \\
+54  & iPod \\
+55  & ladle \\
+56  & lamp \\
+57  & laptop \\
+58  & lipstick \\
+59  & maillot \\
+60  & microphone \\
+61  & microwave \\
+62  & milk can \\
+63  & miniskirt \\
+64  & motorcycle \\
+65  & mushroom \\
+66  & nail \\
+67  & neck brace \\
+68  & person \\
+69  & piano \\
+70  & pineapple \\
+71  & ping-pong ball \\
+72  & pizza \\
+73  & plastic bag \\
+74  & pomegranate \\
+75  & popsicle \\
+76  & power drill \\
+77  & pretzel \\
+78  & printer \\
+79  & puck \\
+80  & punching bag \\
+81  & purse \\
+82  & racket \\
+83  & refrigerator \\
+84  & remote control \\
+85  & rubber eraser \\
+86  & rugby ball \\
+87  & ruler \\
+88  & salt or pepper shaker \\
+89  & saxophone \\
+90  & screwdriver \\
+91  & ski \\
+92  & snowmobile \\
+93  & snowplow \\
+94  & soap dispenser \\
+95  & soccer ball \\
+96  & sofa \\
+97  & stethoscope \\
+98  & stove \\
+99  & sunglasses \\
+100 & swimming trunks \\
+101 & table \\
+102 & tennis ball \\
+103 & tie \\
+104 & toaster \\
+105 & traffic light \\
+106 & train \\
+107 & trombone \\
+108 & trumpet \\
+109 & tv or monitor \\
+110 & unicycle \\
+111 & vacuum \\
+112 & violin \\
+113 & volleyball \\
+114 & washer \\
+115 & water bottle \\
+116 & watercraft \\
+117 & wine bottle \\
+118 & bottle \\
+\end{supertabular}
+\end{multicols*}
+\section{Confusion Maps}
+\pgfplotsset{
+	xmin=0.5, ymin=0.5,xmax=20.5,
+	xtick=data,
+	ytick=data,
+	width=0.8\linewidth,height=1.25\linewidth,
+	xlabel={worst 20 classes},
+	ylabel={predictions},
+	xticklabel style={rotate=90, anchor=east, font=\scriptsize},
+	yticklabel style={font=\scriptsize},
+	mesh/ordering=y varies,
+	colorbar,
+	grid=both,
+	empty line=none,
+	colorbar style={
+		title={Frequencies},
+		yticklabel style={
+			/pgf/number format/.cd,
+			fixed,
+			fixed zerofill
+		}
+	},
+	every axis plot/.append style={matrix plot*, point meta=explicit},
+	grid style={color=white},
+}
+%CONFUSION SPATIAL S
+\begin{figure}[H]\centering
+\begin{tikzpicture}
+\begin{axis}[
+ymax=68.5,
+xticklabels={Archery,
+Basketball,
+BodyWeightSquats,
+BrushingTeeth,
+CricketBowling,
+CricketShot,
+FrontCrawl,
+Hammering,
+HandstandPushups,
+HandstandWalking,
+HighJump,
+JumpingJack,
+JumpRope,
+Lunges,
+Nunchucks,
+PizzaTossing,
+PullUps,
+PushUps,
+RopeClimbing,
+Shotput},
+yticklabels={ApplyLipstick,Archery,BabyCrawling,BandMarching,BaseballPitch,Basketball,Biking,BlowingCandles,BodyWeightSquats,BoxingPunchingBag,BoxingSpeedBag,BreastStroke,BrushingTeeth,CleanAndJerk,CricketBowling,CricketShot,Diving,Fencing,FieldHockeyPenalty,FloorGymnastics,FrisbeeCatch,FrontCrawl,GolfSwing,Haircut,Hammering,HammerThrow,HandstandPushups,HandstandWalking,HeadMassage,HighJump,HorseRiding,HulaHoop,JavelinThrow,JugglingBalls,JumpingJack,JumpRope,LongJump,Lunges,Mixing,MoppingFloor,Nunchucks,ParallelBars,PizzaTossing,PlayingCello,PlayingDaf,PoleVault,PullUps,PushUps,RockClimbingIndoor,RopeClimbing,SalsaSpin,ShavingBeard,Shotput,SkateBoarding,Skiing,SkyDiving,SoccerJuggling,StillRings,SumoWrestling,Swing,TableTennisShot,TennisSwing,ThrowDiscus,TrampolineJumping,VolleyballSpiking,WalkingWithDog,WallPushups,WritingOnBoard},
+title={Spatial Baseline}]
+\addplot[matrix plot*, mesh/cols=20, mesh/rows=68] table[x=x, y=y, meta=freq] {data/spatial_s_confusion.dat};
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+%CONFUSION SPATIAL S+P
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+ymax=70.5,
+xticklabels={Archery,Basketball,BodyWeightSquats,BrushingTeeth,CricketBowling,CricketShot,FrontCrawl,Hammering,HandstandPushups,HandstandWalking,HighJump,JumpingJack,JumpRope,Lunges,Nunchucks,PizzaTossing,PullUps,PushUps,SalsaSpin,Shotput},
+yticklabels={ApplyEyeMakeup,ApplyLipstick,Archery,BabyCrawling,BalanceBeam,BandMarching,BaseballPitch,Basketball,BlowDryHair,BodyWeightSquats,BoxingPunchingBag,BoxingSpeedBag,BreastStroke,BrushingTeeth,CleanAndJerk,CliffDiving,CricketBowling,CricketShot,Diving,Fencing,FieldHockeyPenalty,FloorGymnastics,FrisbeeCatch,FrontCrawl,GolfSwing,Haircut,Hammering,HammerThrow,HandstandPushups,HandstandWalking,HeadMassage,HighJump,HulaHoop,IceDancing,JavelinThrow,JugglingBalls,JumpingJack,JumpRope,LongJump,Lunges,MoppingFloor,Nunchucks,ParallelBars,PizzaTossing,PlayingCello,PlayingFlute,PlayingViolin,PoleVault,PullUps,PushUps,RockClimbingIndoor,RopeClimbing,SalsaSpin,ShavingBeard,Shotput,SkateBoarding,Skiing,SkyDiving,SoccerJuggling,SoccerPenalty,StillRings,TableTennisShot,TaiChi,TennisSwing,ThrowDiscus,TrampolineJumping,VolleyballSpiking,WalkingWithDog,WallPushups,WritingOnBoard},
+title={Spatial S+P}]
+\addplot[matrix plot*, mesh/rows=70, mesh/cols=20, point meta=explicit] table[x=x, y=y, meta=freq] {data/spatial_sp_confusion.dat};
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+%CONFUSION SPATIAL S+P+O
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+ymax=72.5,
+xticklabels={Archery,Basketball,BlowDryHair,BodyWeightSquats,BrushingTeeth,CricketShot,FrontCrawl,Hammering,HandstandPushups,HandstandWalking,HighJump,JumpingJack,JumpRope,Lunges,Nunchucks,PizzaTossing,PullUps,PushUps,Shotput,WallPushups},
+yticklabels={ApplyEyeMakeup,ApplyLipstick,Archery,BabyCrawling,BandMarching,Basketball,BenchPress,BlowDryHair,BlowingCandles,BodyWeightSquats,Bowling,BoxingPunchingBag,BoxingSpeedBag,BreastStroke,BrushingTeeth,CleanAndJerk,CliffDiving,CricketBowling,CricketShot,Diving,Fencing,FieldHockeyPenalty,FloorGymnastics,FrisbeeCatch,FrontCrawl,GolfSwing,Haircut,Hammering,HammerThrow,HandstandPushups,HandstandWalking,HeadMassage,HighJump,HorseRiding,HulaHoop,JavelinThrow,JugglingBalls,JumpingJack,JumpRope,LongJump,Lunges,MilitaryParade,MoppingFloor,Nunchucks,ParallelBars,PizzaTossing,PlayingCello,PoleVault,PullUps,Punch,PushUps,RockClimbingIndoor,RopeClimbing,SalsaSpin,ShavingBeard,Shotput,SkateBoarding,Skiing,SkyDiving,SoccerJuggling,StillRings,SumoWrestling,Swing,TableTennisShot,TaiChi,TennisSwing,ThrowDiscus,TrampolineJumping,VolleyballSpiking,WalkingWithDog,WallPushups,WritingOnBoard},
+empty line=none,
+title={Spatial S+P+O}]
+\addplot[matrix plot*, mesh/rows=72, mesh/cols=20, point meta=explicit] table[x=x, y=y, meta=freq] {data/spatial_spo_confusion.dat};
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+%CONFUSION TEMPORAL S
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+ymax=75.5,
+xticklabels={BaseballPitch,BlowDryHair,BodyWeightSquats,BrushingTeeth,CricketBowling,CricketShot,FieldHockeyPenalty,FrontCrawl,Haircut,Hammering,HandstandWalking,JumpRope,Kayaking,Mixing,PizzaTossing,ShavingBeard,Shotput,SkateBoarding,Skiing,WallPushups},
+yticklabels={ApplyEyeMakeup,ApplyLipstick,Archery,BabyCrawling,BalanceBeam,BaseballPitch,Basketball,Biking,Billiards,BlowDryHair,BlowingCandles,BodyWeightSquats,Bowling,BoxingSpeedBag,BreastStroke,BrushingTeeth,CleanAndJerk,CliffDiving,CricketBowling,CricketShot,CuttingInKitchen,Drumming,Fencing,FieldHockeyPenalty,FloorGymnastics,FrisbeeCatch,FrontCrawl,GolfSwing,Haircut,Hammering,HammerThrow,HandstandPushups,HandstandWalking,HeadMassage,HighJump,HorseRace,IceDancing,JavelinThrow,JumpRope,Kayaking,Knitting,Lunges,Mixing,MoppingFloor,Nunchucks,PizzaTossing,PlayingCello,PlayingFlute,PlayingGuitar,PlayingPiano,PlayingTabla,PoleVault,PullUps,Punch,Rafting,RockClimbingIndoor,Rowing,ShavingBeard,Shotput,SkateBoarding,Skiing,Skijet,SoccerJuggling,SoccerPenalty,SumoWrestling,TableTennisShot,TaiChi,TennisSwing,ThrowDiscus,TrampolineJumping,Typing,VolleyballSpiking,WallPushups,WritingOnBoard,YoYo},
+empty line=none,
+title={Temporal Baseline}]
+\addplot[matrix plot*, mesh/rows=75, mesh/cols=20, point meta=explicit] table[x=x, y=y, meta=freq] {data/temporal_s_confusion.dat};
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+%CONFUSION TEMPORAL P
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+ymax=66.5,
+xticklabels={BaseballPitch,BlowDryHair,BrushingTeeth,CricketBowling,CricketShot,CuttingInKitchen,FieldHockeyPenalty,Haircut,Hammering,HandstandWalking,Mixing,MoppingFloor,Nunchucks,PizzaTossing,PullUps,ShavingBeard,Shotput,SkateBoarding,Skiing,WallPushups},
+yticklabels={ApplyEyeMakeup,ApplyLipstick,Archery,BalanceBeam,BaseballPitch,Basketball,BenchPress,Billiards,BlowDryHair,BlowingCandles,BodyWeightSquats,Bowling,BoxingSpeedBag,BrushingTeeth,CliffDiving,CricketBowling,CricketShot,CuttingInKitchen,Drumming,Fencing,FieldHockeyPenalty,FrisbeeCatch,Haircut,Hammering,HandstandPushups,HandstandWalking,HeadMassage,IceDancing,JavelinThrow,Kayaking,Knitting,LongJump,Lunges,Mixing,MoppingFloor,Nunchucks,ParallelBars,PizzaTossing,PlayingCello,PlayingFlute,PlayingSitar,PlayingTabla,PlayingViolin,PullUps,Punch,RockClimbingIndoor,RopeClimbing,SalsaSpin,ShavingBeard,Shotput,SkateBoarding,Skiing,Skijet,SoccerJuggling,SoccerPenalty,StillRings,Swing,TableTennisShot,TaiChi,TennisSwing,ThrowDiscus,VolleyballSpiking,WalkingWithDog,WallPushups,WritingOnBoard,YoYo},
+title={Temporal P}]
+\addplot[matrix plot*, mesh/rows=66, mesh/cols=20, point meta=explicit] table[x=x, y=y, meta=freq] {data/temporal_p_confusion.dat};
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+%CONFUSION TEMPORAL S+P
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+ymax=72.5,
+xticklabels={BaseballPitch,BlowDryHair,BodyWeightSquats,BrushingTeeth,CricketBowling,CricketShot,CuttingInKitchen,FieldHockeyPenalty,FrontCrawl,Haircut,Hammering,HandstandWalking,Mixing,PizzaTossing,PullUps,ShavingBeard,Shotput,SkateBoarding,Skiing,WallPushups},
+yticklabels={ApplyEyeMakeup,ApplyLipstick,Archery,BabyCrawling,BalanceBeam,BaseballPitch,Basketball,BenchPress,Biking,Billiards,BlowDryHair,BlowingCandles,BodyWeightSquats,Bowling,BoxingSpeedBag,BreastStroke,BrushingTeeth,CleanAndJerk,CliffDiving,CricketBowling,CricketShot,CuttingInKitchen,Drumming,FieldHockeyPenalty,FrisbeeCatch,FrontCrawl,Haircut,Hammering,HammerThrow,HandstandPushups,HandstandWalking,HeadMassage,HorseRace,IceDancing,JavelinThrow,JumpRope,Kayaking,Knitting,LongJump,Lunges,Mixing,MoppingFloor,Nunchucks,ParallelBars,PizzaTossing,PlayingFlute,PlayingSitar,PlayingTabla,PlayingViolin,PullUps,Punch,PushUps,Rafting,RockClimbingIndoor,RopeClimbing,SalsaSpin,ShavingBeard,Shotput,SkateBoarding,Skiing,Skijet,SoccerJuggling,SoccerPenalty,SumoWrestling,TennisSwing,ThrowDiscus,Typing,VolleyballSpiking,WalkingWithDog,WallPushups,WritingOnBoard,YoYo},
+title={Temporal S+P}]
+\addplot[matrix plot*, mesh/rows=72, mesh/cols=20, point meta=explicit] table[x=x, y=y, meta=freq] {data/temporal_sp_confusion.dat};
+\end{axis}
+\end{tikzpicture}
+\end{figure}

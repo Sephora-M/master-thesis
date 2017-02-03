@@ -1,0 +1,57 @@
+\contentsline {chapter}{List of Figures}{vii}{section*.5}
+\contentsline {chapter}{List of Tables}{ix}{section*.7}
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}
+\contentsline {section}{\numberline {1.1}Action Recognition}{1}{section.1.1}
+\contentsline {section}{\numberline {1.2}Objective, Challenge and Contribution}{2}{section.1.2}
+\contentsline {section}{\numberline {1.3}Thesis Outline}{4}{section.1.3}
+\contentsline {chapter}{\numberline {2}Related Work}{5}{chapter.2}
+\contentsline {paragraph}{\nonumberline Single Cue}{5}{section*.12}
+\contentsline {paragraph}{\nonumberline Cue Augmentation}{5}{section*.13}
+\contentsline {paragraph}{\nonumberline Cue Augmentation in Deep Neural Network}{6}{section*.14}
+\contentsline {chapter}{\numberline {3}Preliminary}{7}{chapter.3}
+\contentsline {section}{\numberline {3.1}Deep Learning}{7}{section.3.1}
+\contentsline {subsection}{\numberline {3.1.1}Fundamental Components in a CNN}{7}{subsection.3.1.1}
+\contentsline {subsubsection}{\nonumberline Convolutional Layer}{8}{section*.16}
+\contentsline {subsubsection}{\nonumberline Pooling Layer}{8}{section*.18}
+\contentsline {subsubsection}{\nonumberline Rectified Linear Unit Layer}{9}{section*.20}
+\contentsline {subsubsection}{\nonumberline Fully Connected Layer}{9}{section*.21}
+\contentsline {subsubsection}{\nonumberline DropOut Layer}{9}{section*.22}
+\contentsline {subsection}{\numberline {3.1.2}Parameter Learning via Back-propagation}{10}{subsection.3.1.2}
+\contentsline {paragraph}{\nonumberline Stochastic Gradient Descent}{10}{section*.23}
+\contentsline {paragraph}{\nonumberline Backpropagation}{11}{section*.24}
+\contentsline {subsection}{\numberline {3.1.3}Feature Map}{12}{subsection.3.1.3}
+\contentsline {section}{\numberline {3.2}Dynamic Programming}{12}{section.3.2}
+\contentsline {chapter}{\numberline {4}Methodology}{17}{chapter.4}
+\contentsline {section}{\numberline {4.1}Model Architecture}{18}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}Semantic decomposition using RoiPooling}{18}{subsection.4.1.1}
+\contentsline {subsection}{\numberline {4.1.2}Object Channel with Multiple Instance Learning}{20}{subsection.4.1.2}
+\contentsline {subsection}{\numberline {4.1.3}Fusion}{21}{subsection.4.1.3}
+\contentsline {section}{\numberline {4.2}Human Object Detection}{22}{section.4.2}
+\contentsline {subsection}{\numberline {4.2.1}Object Detector Faster-RCNN}{22}{subsection.4.2.1}
+\contentsline {paragraph}{\nonumberline RPN}{22}{section*.34}
+\contentsline {paragraph}{\nonumberline DN}{25}{section*.35}
+\contentsline {paragraph}{\nonumberline Training}{26}{section*.37}
+\contentsline {subsection}{\numberline {4.2.2}Human Track Extraction}{26}{subsection.4.2.2}
+\contentsline {subsection}{\numberline {4.2.3}Object Filtering}{31}{subsection.4.2.3}
+\contentsline {section}{\numberline {4.3}Merging Unit}{31}{section.4.3}
+\contentsline {chapter}{\numberline {5}Implementation Details}{35}{chapter.5}
+\contentsline {section}{\numberline {5.1}Data}{35}{section.5.1}
+\contentsline {section}{\numberline {5.2}Training}{35}{section.5.2}
+\contentsline {section}{\numberline {5.3}Testing}{36}{section.5.3}
+\contentsline {chapter}{\numberline {6}Evaluation}{37}{chapter.6}
+\contentsline {section}{\numberline {6.1}Contributions of Semantic Cues}{38}{section.6.1}
+\contentsline {section}{\numberline {6.2}Fusion Methods}{39}{section.6.2}
+\contentsline {section}{\numberline {6.3}ROI Quality}{40}{section.6.3}
+\contentsline {section}{\numberline {6.4}Action Categories}{41}{section.6.4}
+\contentsline {paragraph}{\nonumberline Person Channel}{42}{section*.53}
+\contentsline {paragraph}{\nonumberline Object Channel}{42}{section*.54}
+\contentsline {paragraph}{\nonumberline Complementarity}{44}{section*.55}
+\contentsline {section}{\numberline {6.5}Comparison with State-of-the-art}{44}{section.6.5}
+\contentsline {chapter}{\numberline {7}Conclusion and Future Work}{47}{chapter.7}
+\contentsline {section}{\numberline {7.1}Conclusion}{47}{section.7.1}
+\contentsline {section}{\numberline {7.2}Future Work}{47}{section.7.2}
+\contentsline {chapter}{\numberline {A}Appendix}{49}{appendix.A}
+\contentsline {section}{\numberline {A.1}Categorization of UCF101}{49}{section.A.1}
+\contentsline {section}{\numberline {A.2}Object Categories in Faster-RCNN}{50}{section.A.2}
+\contentsline {section}{\numberline {A.3}Confusion Maps}{51}{section.A.3}
+\contentsline {chapter}{Bibliography}{57}{section*.65}

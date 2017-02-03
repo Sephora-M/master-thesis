@@ -1,0 +1,266 @@
+\documentclass[a4paper,twoside,12pt]{scrbook}
+\usepackage{amsmath}
+\usepackage{amssymb,amsthm,mathtools}
+\usepackage[utf8]{inputenc} 
+\usepackage[hang,font={small,sl},hang,labelfont=bf]{caption}
+\usepackage[font+={footnotesize}]{subcaption}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{calc}
+\usepackage{longtable} % tables over several pages
+\usepackage{supertabular}
+\usepackage{array}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{booktabs} % publication quality tables for LaTeX
+\usepackage{multicol}
+\usepackage{breqn}
+\usepackage{soul}
+\ifpdfoutput{%
+	\usepackage[pdftex]{graphicx}
+	\usepackage[]{pdfpages} %for including full pdf pages
+}{%
+	\usepackage{graphicx}
+}
+\usepackage{epstopdf}
+\usepackage{tikz}
+\usetikzlibrary{matrix, positioning,patterns, shapes.misc}
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+\usepackage{pgfplotstable}
+\epstopdfsetup{update} % only regenerate pdf files when eps file is newer
+\usepackage{rotating} % rotate figures
+\usepackage[headinclude]{scrpage2}
+% Font packages:
+\usepackage{times}
+\usepackage{helvet}
+\usepackage[T1]{fontenc}
+
+\ifpdfoutput{%
+	\usepackage[pdftex,
+		bookmarks,
+		bookmarksopen=true,
+		bookmarksnumbered=true,
+		pdfauthor={Yifan Wang},
+		pdftitle={Deep Semantic Fusion for Action Recognition},% RENAME?
+		colorlinks,
+		linkcolor=darkgray,
+		citecolor=MidnightBlue,
+		filecolor=black,
+		urlcolor=NavyBlue,
+		anchorcolor=black,
+		menucolor=black,
+		breaklinks=false,
+		pageanchor=true,
+		plainpages=false,
+		pdfpagelabels=true]{hyperref}
+	\usepackage{url}
+}{}
+
+\ifpdfoutput{%
+	\pdfcompresslevel=9
+	\pdfoutput=1
+	\DeclareGraphicsExtensions{.pdf,.png}
+}{}
+
+\bibliographystyle{amsplain}
+
+\RedeclareSectionCommand[beforeskip=20ex, afterskip=2cm]{chapter}
+
+% A4
+%
+\topmargin -0.5in
+\textheight 9.3in
+\textwidth 6.3in
+\oddsidemargin 0.18in
+\evensidemargin -0.22in
+\parskip 0.1in
+\parindent 0in
+
+\renewcommand{\arraystretch}{1.5}
+\renewcommand{\baselinestretch}{1}
+
+\input{./chapters/preamble}
+\input{./chapters/bibpre}
+
+\begin{document}
+
+%% Define leading chapter pages
+
+\input{./chapters/studchapter}
+\newpagestyle{mychapterpagestyle}{{\protect\mychpstyleintl}{\protect\mychpstyleintl}}{}
+\newpagestyle{myappendixpagestyle}{{\protect\mychpstyleintl}{\protect\mychpstyleintl}}{}
+%%
+
+%refs
+%\newcommand{\chpref}[1]{Chapter \ref{#1}}
+%\newcommand{\secref}[1]{Section \ref{#1}}
+%\newcommand{\figref}[1]{Figure \ref{#1}}
+%\newcommand{\tabref}[1]{Table \ref{#1}}
+%\newcommand{\apxref}[1]{Appendix \ref{#1}}
+%%
+
+% --- selfmade version ----
+\begin{titlepage}
+	\topmargin 1.0cm
+	\oddsidemargin 0.0cm
+	\evensidemargin 0.0cm
+	%\textwidth 6.5in
+	\centering
+	\Huge
+	\vspace{3.0cm}
+	\textbf{\textsf{Semantic-Reginal CNNs for Action Recognition}} \\[2.0cm]
+\begin{figure}[h]\centering
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/babycrawling.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/handstandwalking.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/pushup.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/pizzatossing.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}	    \includegraphics[width=\columnwidth]{figures/playingviolin.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/archery.png}
+\end{subfigure}
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/frontcrawl.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/surfing.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/skydiving.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/bowling.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/balancebeam.png}
+\end{subfigure}%
+\begin{subfigure}{0.16\linewidth}
+\includegraphics[width=\columnwidth]{figures/writingonboard.png}
+\end{subfigure}
+\end{figure}
+	\vspace{3cm}
+	\sffamily
+	\Large
+	Yifan Wang
+	\\[0.8cm]
+	\large
+	Master Thesis % Bachelor Thesis
+	\\
+	April 2016
+	\\[1.3cm]
+	\emph{Supervisors:}\\
+	Jie Song\\
+	Dr.\ Limin Wang\\
+	Prof.\ Dr.\ Otmar Hilliges		% The supervising professor
+	\vfill
+	\includegraphics*[height=0.8cm]{figures/eth_logo_kurz_pos.eps} \hfill
+	\includegraphics*[height=0.8cm]{figures/logo-ait}
+	\vspace{3.4cm}
+\end{titlepage}
+\clearemptydoublepage
+%%
+
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+\input{./chapters/abstract}
+
+%-----------------------------------------------------------------------------------------------
+%include task description here:
+%\cleardoublepage
+%-----------------------------------------------------------------------------------------------
+
+%include acknowledgment here:
+\include{./chapters/acknowledgment}
+\setcounter{tocdepth}{1}
+\tableofcontents
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+\cleardoublepage
+
+\pagenumbering{arabic}
+\renewcommand*{\chapterpagestyle}{mychapterpagestyle}
+\renewcommand*{\chapterformat}{} % show chapter titles only (no numbers)
+\renewcommand*{\sectionformat}{\thesection\enskip\enskip}
+\renewcommand*{\subsectionformat}{\thesubsection\enskip}
+\renewcommand*{\tableformat}{\tablename~\thetable}
+\renewcommand*{\figureformat}{\figurename~\thefigure}
+\captionsetup{subrefformat=parens}
+
+% ---- TABLES ----
+\pgfplotstableread[col sep=comma,
+assume math mode,
+columns/category/.style={reset styles, string type},
+]{data/map_cate.dat}{\mapcatedat}
+\pgfplotstableread[
+columns/name/.style={reset styles, string type},
+columns/flowname/.style={reset styles, string type}
+]{data/top_10_growth.dat}{\toptengrowth}
+\pgfplotstableread[
+columns/name/.style={reset styles, string type},
+columns/flowname/.style={reset styles, string type}
+]{data/top_10_reduce.dat}{\toptenreduce}
+\pgfplotstableread[
+columns/name/.style={reset styles, string type},
+]{data/temporal5perc.dat}{\temporalgains}
+\pgfplotstableread[
+columns/name/.style={reset styles, string type},
+]{data/spatial5perc.dat}{\spatialgains}
+\pgfplotstableread[col sep=comma,
+assume math mode,
+columns/category/.style={reset styles, string type}
+]{data/pos_channel.dat}{\poschanneldat}
+\pgfplotstableread[
+assume math mode,
+columns/name/.style={reset styles, string type},
+]{data/hointeraction.dat}{\interactiondat}
+\pgfplotstableread[col sep=comma,
+assume math mode,
+columns/category/.style={reset styles, string type}
+]{data/ps_channel.dat}{\pschanneldat}
+% ---- MAIN PART ----
+
+\input{./chapters/introduction}
+\input{./chapters/relatedwork}
+\input{./chapters/background}
+\input{./chapters/model}
+\input{./chapters/setup}
+\input{./chapters/experiment}
+\input{./chapters/conclusion}
+
+
+% ---- END MAIN PART ----
+
+
+\appendix
+\clearpage
+\renewcommand*{\chapterpagestyle}{myappendixpagestyle}
+
+\input{./chapters/apx-sample-appendix}
+
+\clearpage
+\renewcommand*{\chapterpagestyle}{empty}
+
+%\nocite{*}
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliography{ref}
+
+\end{document}

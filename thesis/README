@@ -1,0 +1,12 @@
+This is a template for student theses in the AIT lab at ETH.
+
+Do not directly edit the files in this directory (unless you're feeding back generic improvements to the template).
+
+If you are starting to write your thesis copy the source files to:
+
+<AIT_SVN_ROOT>/trunk/Documents/Thesis/<YourDegree>/<FirstnameLastName>/
+
+and edit them there.
+
+Last update: 
+Otmar | 26/2/2014
