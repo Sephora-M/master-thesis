@@ -13,6 +13,7 @@ b = ma.get_random_batch(tr,4,2)
 """
 
 NUM_ACTIVITIES = 12
+model = SRNN_model(12, 10, 3, 1, 128, 5.0, 32, 0.0001,0.95, 1e-6,False, forward_only=True, l2_regularization=False, weight_decay=1.0, log_dir=None)
 
 tf.app.flags.DEFINE_float("learning_rate", 0.0001, "Learning rate.")
 tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.95,
@@ -80,22 +81,33 @@ def extract_features(dir_name='/local/home/msephora/master-thesis/master-thesis/
         train_data, train_num_video, valid_data, valid_num_video, max, min = rd.get_pos_imgsNTU()
         num_activities = 60
     else:
-        train_data, train_num_video, valid_data, valid_num_video, max, min = rd.get_pos_imgsJHMDB(dir_name, sub_activities=sub_activities,
+        train_data, train_num_video, valid_data, valid_num_video = rd.get_pos_imgsJHMDB(dir_name, sub_activities=sub_activities,
                                                                                         validation_proportion=validation_proportion, normalized=normalized)
 
-    print('max num frames =')
-    print(max)
-    print('min num frames =')
-    print(min)
-
-    train_dataset = rd.extract_features(train_data,train_num_video,num_activities,num_considered_frames=num_frames)
-    valid_dataset = rd.extract_features(valid_data,valid_num_video,num_activities,num_considered_frames=num_frames)
+    # print('max num frames =')
+    # print(max)
+    # print('min num frames =')
+    # print(min)
+    if data == 'JHMDB':
+        train_dataset = rd.extract_features(train_data,train_num_video,num_activities,num_considered_frames=num_frames,JHMDB=True)
+        valid_dataset = rd.extract_features(valid_data,valid_num_video,num_activities,num_considered_frames=num_frames,JHMDB=True)
+    else:
+        train_dataset = rd.extract_features(train_data,train_num_video,num_activities,num_considered_frames=num_frames)
+        valid_dataset = rd.extract_features(valid_data,valid_num_video,num_activities,num_considered_frames=num_frames)
 
     return train_dataset, valid_dataset
 
 def create_pickle(pickle_name, dir_name, num_frames, normalized, data):
     tr,te= extract_features(dir_name,num_frames=num_frames,normalized=normalized, data=data)
     dic={'train':tr,'test':te}
+    pickle.dump(dic,open(pickle_name,'wb'))
+
+def create_pickle_fromdata(pickle_name, data_name, num_frames, valid_num_video, train_num_video, num_activities):
+    tr = pickle.load(open(data_name,'rb'))
+    te = pickle.load(open(data_name,'rb'))
+    train_dataset = rd.extract_features(tr,train_num_video,num_activities,num_considered_frames=num_frames)
+    valid_dataset = rd.extract_features(te,valid_num_video,num_activities,num_considered_frames=num_frames)
+    dic={'train':train_dataset,'test':valid_dataset}
     pickle.dump(dic,open(pickle_name,'wb'))
 
 def synthetic_data(train_size, valid_size, test_size,num_frames,num_features):
@@ -163,7 +175,7 @@ def get_random_batch(data, batch_size):
     idxs = np.random.random_integers(0,data_size-1,batch_size)
     batch_dic = np.array([{},{},[]])
 
-    for i in xrange(len(data)):
+    for i in xrange(len(data)-1):
         dic = data[i]
         if i<2:
             batch_sub_dic = {}
@@ -176,13 +188,13 @@ def get_random_batch(data, batch_size):
     batch = np.delete(batch,0)
     return batch
 
-def create_SRNN_model(session, forward_only, result_file=None, batch_size=None,same_param=False):
+def create_SRNN_model(session, forward_only,log_dir, result_file=None, batch_size=None,same_param=False):
 
     if batch_size is None:
         batch_size = FLAGS.batch_size
 
     model = SRNN_model(FLAGS.num_activities, FLAGS.num_frames, FLAGS.num_temp_features, FLAGS.num_st_features, FLAGS.num_units, FLAGS.max_gradient_norm, batch_size, FLAGS.learning_rate,
-                       FLAGS.learning_rate_decay_factor, FLAGS.adam_epsilon, FLAGS.GD, forward_only=forward_only, l2_regularization=FLAGS.l2_reg, weight_decay=FLAGS.reg_factor)
+                       FLAGS.learning_rate_decay_factor, FLAGS.adam_epsilon, FLAGS.GD, forward_only=forward_only, l2_regularization=FLAGS.l2_reg, weight_decay=FLAGS.reg_factor, log_dir=log_dir)
 
     if not same_param:
         checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
@@ -193,12 +205,16 @@ def create_SRNN_model(session, forward_only, result_file=None, batch_size=None,s
             model.saver.restore(session, checkpoint.model_checkpoint_path)
         else:
             print("Created model with fresh parameters.")
-            session.run(tf.initialize_all_variables())
+            model.train_writer.add_graph(session.graph)
+            session.run(tf.global_variables_initializer())
     return model
 
 def main(_):
     if not os.path.exists(FLAGS.train_dir):
         os.makedirs(FLAGS.train_dir)
+    log_dir = str(FLAGS.train_dir +'/logs')
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
     result_file = open(FLAGS.train_dir + "/results.txt", 'a+')
 
     if FLAGS.data_pickle is None:
@@ -239,9 +255,9 @@ def main(_):
     valid_data = data['test']
 
     train_data_size = len(train_data[2])
-
-
     steps_per_epoch = int(train_data_size/FLAGS.batch_size)
+
+
 
     with tf.device(FLAGS.gpu):
         config = tf.ConfigProto(allow_soft_placement = True)
@@ -255,7 +271,7 @@ def main(_):
                     if not FLAGS.GD:
                         print("with Adam Optimizer")
                     result_file.write("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
-                    model = create_SRNN_model(sess,False,result_file)
+                    model = create_SRNN_model(sess,False,log_dir,result_file)
 
                     
 
@@ -287,7 +303,11 @@ def main(_):
                         temp_input_batch = batch[0]
                         st_input_batch = batch[1]
                         target_batch = batch[-1]
-                        _ , step_loss, _ = model.step(sess,temp_input_batch, st_input_batch, target_batch, False)
+                        if current_step % FLAGS.steps_per_checkpoint == 0:
+                            _ , step_loss, _, summary = model.step_with_summary(sess,temp_input_batch, st_input_batch, target_batch, False)
+                            model.train_writer.add_summary(summary,model.global_step.eval())
+                        else:
+                            _ , step_loss, _ = model.step(sess,temp_input_batch, st_input_batch, target_batch, False)
 
                         step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
                         ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
@@ -327,6 +347,8 @@ def main(_):
                             result_file.write("  eval:  loss %.4f  \n" % (valid_loss))
                             previous_eval_loss.append(valid_loss)
 
+
+
                             # Stopping criterion
                             improve_valid = previous_eval_loss[-1] < best_val_loss
                             improve_train = previous_train_loss[-1] < best_train_loss
@@ -348,6 +370,7 @@ def main(_):
                             train_batch_id =1
                             current_epoch +=1
 
+                    model.train_writer.close()
                         # TODO: validation and testing
                     #save model
                     # model.saver.save(sess, checkpoint_path, global_step=model.global_step)

@@ -6,7 +6,7 @@ import numpy as np
 NUM_TEMP_FEATURES=4
 NUM_ST_FEATURES=1
 
-def get_splits(splits_path='/disks/sdh/01/sephora/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1):
+def get_splits(splits_path='/local/home/msephora/master-thesis/master-thesis/srnn-TF/data/JHMDB/sub_splits', ind_split = 1, JHMDB=False):
     train = np.array([],dtype=str)
     test = np.array([],dtype=str)
 
@@ -19,8 +19,8 @@ def get_splits(splits_path='/disks/sdh/01/sephora/master-thesis/srnn-TF/data/JHM
             for line in file:
                 type = line.strip().split(' ')
                 name = type[0].split('.')[0]
-                #if len(name)>30:
-                #    name = name[0:22]+name[-8:]
+                if JHMDB and len(name)>30:
+                    name = name[0:22]+name[-8:]
                 split = int(type[1])
                 splits_dic[split] = np.append(splits_dic[split], name)
             file.close()
@@ -38,7 +38,7 @@ def get_pos_imgsJHMDB(joint_positions_path='/local/home/msephora/master-thesis/m
                'pour', 'pullup', 'push', 'run', 'shoot_ball', 'shoot_bow', 'shoot_gun', 'sit', 'stand',
                'swing_baseball', 'throw', 'walk', 'wave']
 
-    splits = get_splits(ind_split=ind_split)
+    splits = get_splits(ind_split=ind_split, JHMDB=True)
     #print(splits)
     train_data = {}
     train_data_size=0
@@ -69,8 +69,8 @@ def get_pos_imgsJHMDB(joint_positions_path='/local/home/msephora/master-thesis/m
         train_data[i] = train_pos_imgs
         valid_data[i] = valid_pos_imgs
 
-    #print("Num videos:")
-    #print(train_data_size)
+    print("Num videos:")
+    print(train_data_size)
     return train_data, train_data_size, valid_data, valid_data_size
 
 
@@ -298,7 +298,7 @@ def read_pos_imgUTK(file_path):
     file.close()
     return pos_img, num_frames
 
-def extract_features(all_data, num_video, num_activities, num_considered_frames):
+def extract_features(all_data, num_video, num_activities, num_considered_frames,JHMDB=False):
     print("Num videos:")
     print(num_video)
     temp_features_names = ['face-face','belly-belly','rightArm-rightArm','leftArm-leftArm','rightLeg-rightLeg','leftLeg-leftLeg']
@@ -311,14 +311,18 @@ def extract_features(all_data, num_video, num_activities, num_considered_frames)
     joints_pairs = {'face-leftArm' : [0,3],'face-rightArm': [0,2],'face-belly' : [0,1],'belly-leftArm': [1,3],'belly-rightArm': [1,2],
                              'belly-rightLeg': [1,4],'belly-leftLeg': [1,5],'leftArm-rightArm':[3,2],'leftLeg-rightLeg':[5,4]}
     temp_features = {}
-
-
+    infos = {}
+    if JHMDB:
+        NUM_TEMP_FEATURES=3
+    else:
+        NUM_TEMP_FEATURES=4
     for name in temp_features_names:
         temp_features[name] = np.empty((num_video,num_considered_frames,NUM_TEMP_FEATURES))
         current_video = 0
         for action_id in all_data:
             for video in all_data[action_id]:
-                temp_features[name][current_video,:,:] = extract_ntraj(all_data[action_id][video], joints[name], num_considered_frames)
+                infos[current_video] = [action_id, video]
+                temp_features[name][current_video,:,:] = extract_ntraj(all_data[action_id][video], joints[name], num_considered_frames,JHMDB)
                 current_video += 1
     st_features = {}
     for name in st_features_names:
@@ -338,7 +342,7 @@ def extract_features(all_data, num_video, num_activities, num_considered_frames)
             action_classes[current_video,action_id] = 1
             current_video += 1
 
-    return [temp_features, st_features, action_classes]
+    return [temp_features, st_features, action_classes, infos]
 
 
 def extract_temp_features(pos_img, joint_id, num_frames):
@@ -388,10 +392,14 @@ def extract_st_features(pos_img, joints_id, num_frames):
     return st_features
 
 
-def extract_ntraj(pos_img, joint_id, num_frames):
+def extract_ntraj(pos_img, joint_id, num_frames, JHMDB):
 
     _ , _ , tot_num_frames = pos_img.shape
-    relative_pos = normalize_positions(pos_img)
+    if JHMDB:
+        NUM_TEMP_FEATURES = 3
+    else:
+        NUM_TEMP_FEATURES = 4
+    relative_pos = normalize_positions(pos_img, NUM_TEMP_FEATURES)
     frames_chosen = np.linspace(0, tot_num_frames - 1, num_frames).astype(int)
 
     temp_features = np.empty((num_frames, NUM_TEMP_FEATURES))
@@ -399,31 +407,34 @@ def extract_ntraj(pos_img, joint_id, num_frames):
     for i in range(num_frames-1):
         d = pos_img[:,joint_id,frames_chosen[i+1]] - pos_img[:,joint_id,frames_chosen[i]]
         dist = distance.euclidean(pos_img[:,joint_id,frames_chosen[i+1]], pos_img[:,joint_id,frames_chosen[i]])
-        ort = math.atan2(d[1],d[0])*180.0/math.pi
-        # dist = distance.euclidean(pos_img[:,joint_id,frames_chosen[i]], pos_img[:,joint_id,frames_chosen[i+1]])
-        # temp_features[i,0] = pos_img[0,joint_id,frames_chosen[i]] # position x
-        # temp_features[i,1] = pos_img[1,joint_id,frames_chosen[i]] # position y
-        # temp_features[i,2] = dist
-        temp_features[i,3] = dist #  dx
-        #temp_features[i,3] = ort
-        temp_features[i,0] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
-        temp_features[i,1] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
-        temp_features[i,2] = relative_pos[2,joint_id,frames_chosen[i]] #  relative z
+        #ort = math.atan2(d[1],d[0])*180.0/math.pi
+        if not JHMDB:
+            temp_features[i,0] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
+            temp_features[i,1] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
+            temp_features[i,2] = relative_pos[2,joint_id,frames_chosen[i]] #  relative z
+            temp_features[i,3] = dist
+        else:
+            temp_features[i,0] = relative_pos[0,joint_id,frames_chosen[i]] #  relative x
+            temp_features[i,1] = relative_pos[1,joint_id,frames_chosen[i]] #  relative y
+            temp_features[i,2] = dist
+    if not JHMDB:
+        temp_features[num_frames - 1,0] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
+        temp_features[num_frames - 1,1] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
+        temp_features[num_frames - 1,2] = relative_pos[2,joint_id,frames_chosen[num_frames - 1]] #  reative z
+        temp_features[num_frames - 1,3] = 0.0
+    else:
+        temp_features[num_frames - 1,0] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
+        temp_features[num_frames - 1,1] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
+        temp_features[num_frames - 1,2] = 0.0
 
-    temp_features[num_frames - 1,2] = 0.0
-    #temp_features[num_frames - 1,3] = 0.0
-    temp_features[num_frames - 1,0] = relative_pos[0,joint_id,frames_chosen[num_frames - 1]] #  realative x
-    temp_features[num_frames - 1,1] = relative_pos[1,joint_id,frames_chosen[num_frames - 1]] #  reative y
-    temp_features[num_frames - 1,2] = relative_pos[2,joint_id,frames_chosen[num_frames - 1]] #  reative z
     return temp_features
 
-def normalize_positions(pos_img):
+def normalize_positions(pos_img,num_temp_feats):
     """
     Returns the relative positions of normalized joint positions w.r.t to the puppet center
     :param pos_img:
     :return:
     """
     torso_positions = (pos_img[:,0,:] + pos_img[:,1,:])/2
-    torso_positions=np.reshape(torso_positions,[3,1,pos_img.shape[2]])
+    torso_positions=np.reshape(torso_positions,[num_temp_feats-1,1,pos_img.shape[2]])
     return pos_img - np.tile(torso_positions, [1 ,6, 1])
-
