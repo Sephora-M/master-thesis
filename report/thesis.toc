@@ -1,0 +1,33 @@
+\contentsline {chapter}{List of Figures}{vii}{section*.4}
+\contentsline {chapter}{List of Tables}{ix}{section*.6}
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}
+\contentsline {chapter}{\numberline {2}Related Work}{3}{chapter.2}
+\contentsline {paragraph}{\nonumberline Human skeleton based action recognition}{3}{section*.8}
+\contentsline {paragraph}{\nonumberline Spatio-temporal structures}{3}{section*.9}
+\contentsline {chapter}{\numberline {3}Preliminary}{5}{chapter.3}
+\contentsline {section}{\numberline {3.1}Spatio-temporal structures}{5}{section.3.1}
+\contentsline {section}{\numberline {3.2}Deep Learning}{5}{section.3.2}
+\contentsline {subsection}{\numberline {3.2.1}Recurrent Neural Networks}{5}{subsection.3.2.1}
+\contentsline {chapter}{\numberline {4}Methodology}{7}{chapter.4}
+\contentsline {section}{\numberline {4.1}Model Architecture}{7}{section.4.1}
+\contentsline {chapter}{\numberline {5}Implementation Details}{9}{chapter.5}
+\contentsline {section}{\numberline {5.1}Data}{9}{section.5.1}
+\contentsline {section}{\numberline {5.2}Training}{9}{section.5.2}
+\contentsline {section}{\numberline {5.3}Testing}{9}{section.5.3}
+\contentsline {chapter}{\numberline {6}Evaluation}{11}{chapter.6}
+\contentsline {section}{\numberline {6.1}Contributions of Semantic Cues}{12}{section.6.1}
+\contentsline {section}{\numberline {6.2}Fusion Methods}{13}{section.6.2}
+\contentsline {section}{\numberline {6.3}ROI Quality}{14}{section.6.3}
+\contentsline {section}{\numberline {6.4}Action Categories}{15}{section.6.4}
+\contentsline {paragraph}{\nonumberline Person Channel}{15}{section*.17}
+\contentsline {paragraph}{\nonumberline Object Channel}{16}{section*.18}
+\contentsline {paragraph}{\nonumberline Complementarity}{16}{section*.19}
+\contentsline {section}{\numberline {6.5}Comparison with State-of-the-art}{18}{section.6.5}
+\contentsline {chapter}{\numberline {7}Conclusion and Future Work}{21}{chapter.7}
+\contentsline {section}{\numberline {7.1}Conclusion}{21}{section.7.1}
+\contentsline {section}{\numberline {7.2}Future Work}{21}{section.7.2}
+\contentsline {chapter}{\numberline {A}Appendix}{23}{appendix.A}
+\contentsline {section}{\numberline {A.1}Categorization of UCF101}{23}{section.A.1}
+\contentsline {section}{\numberline {A.2}Object Categories in Faster-RCNN}{24}{section.A.2}
+\contentsline {section}{\numberline {A.3}Confusion Maps}{25}{section.A.3}
+\contentsline {chapter}{Bibliography}{31}{section*.29}

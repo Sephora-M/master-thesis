@@ -1,0 +1,384 @@
+% !TEX root = ../thesis.tex
+\chapter{Evaluation}\label{chap:result}
+In this chapter, we pursuit to answer the following three questions
+\begin{enumerate}
+	\item Does semantic structure help action classification?
+	\item If so, how to bring out the best complementary effect?
+	\item How does semantic structure affect recognition performance for each action category?
+\end{enumerate}
+In the following analysis, baseline refers to an in-house trained two-stream CNN network that does not integrate semantic cues. 
+In other words, baseline model utilizes single scene cue.
+Without special declaration, evaluations in  \autoref{sec:cues}\textasciitilde\autoref{sec:categories} refers to UCF101 split1, while in \autoref{sec:comparison} we compare the classification performance of our proposed model with state-of-art methods across all UCF101 splits.
+
+We choose train our own network instead of using a published model \cite{wang2015towards} because we have noticed that although the average classification accuracy stays consistent, the actual class accuracies have been shifted, meaning that the local minimum has slightly changed due to actual implementation differences. 
+As we will cast a detailed investigation concerning category-wise performance in \autoref{sec:categories}, we use our own baseline in order to maintain a consistent local minimum for fair comparison.
+
+The average accuracy of our baseline model and the published model is summarized in \autoref{tab:baseline}.
+
+\begin{table}[h]
+\small
+\begin{tabular}{|c|*{8}{c}|}
+\hline
+mAcc (\%) &\multicolumn{2}{c}{Split1} &\multicolumn{2}{c}{Split2} &\multicolumn{2}{c}{Split3} &\multicolumn{2}{c|}{Avg} \\
+Model & spatial & temporal & spatial & temporal & spatial & temporal & spatial & temporal \\\hline
+Theirs & 79.8 & 85.7& 77.3 & 88.2&77.8&87.4 &78.4 &87.0\\
+Ours Baseline & 79.42 & 85.27&77.14 & 88.13& 77.25 & 86.96 &77.93& 86.79\\\hline
+\end{tabular}\caption[Baseline Results]{Comparison of our in-house trained baseline with publicly available model \cite{wang2015towards}}\label{tab:baseline}
+\end{table}
+
+\section{Contributions of Semantic Cues}\label{sec:cues}
+In this section we verify whether incorporating explicit semantic structure defined by "person", "scene" and "object" cues enhances action recognition.
+
+For this purpose we evaluate scene-only network and person-only network for spatial and temporal streams to study the relative importance of individual cues for different streams respectively.
+(Since object is regarded as an aiding cue, we omit evaluating its individual performance here.)
+To acquire an idea on how well scene and person cues complement each other, we apply a late-fusion by averaging the classification scores yielded from the two networks.
+
+As we can see from \autoref{tab:channels}, \ul{person and scene exhibit unequal relative relevance in spatial and temporal nets}.
+While for spatial net, classification based on the whole scene is much more accurate than based on person (79.42\% vs 73.82\%), the relation is reversed in temporal net.
+This is not surprising since optical flow is inherently person-centric.
+On contrary, spatial net is fed on RGB information of single frames, where the appearance of action performer is usually less descriptive while the global contexts often provide essential hints for correct classification.
+
+For both nets, \ul{combining person and scene in a late-fusion manner improves the classification accuracy, indicating the reciprocal property between the two cues}.
+
+From this point, we investigate the effect when incorporating both semantic cues into the same model as proposed in \autoref{sec:modelarch} in favor of computational efficiency.
+As we can see from \autoref{tab:channels}, \ul{the performance boost transfers to the proposed joint model and for spatial network the classification accuracy even exceeds that from late fusion} (80.46\% vs 80.10\%).
+
+Lastly, we incorporated object cue in spatial net (since object motion is too ambiguous in defining action, we omitted object cue for temporal net). 
+\ul{Unfortunately, incooperating object channel does not generate significant improvement.}
+While generating a marginal improvement compared to scene-only net (79.71\% vs 79.42\%), it falls behind "person+scene" model by 0.75\%.
+We think the cause is manifold:
+\begin{enumerate}
+\item Object appearances have great intra-class variation as well as inter-class correlations.
+Particularly given that the object detections are still very noisy, the discriminant power in object channel is insufficient.
+In order to leverage object cue, a more expressive representation might be needed.
+\item Since in the current implementation, we only utilize locational information of the object to extract sub-regions of the feature maps, object channel can be considered as an augmentation of scene channel.
+The summation of all three channels together implicitly puts more weight on scene channel, abating the strength of person channel.
+\item The current implementation of MIL layer couldn't effectively update weights for relevant and irrelevant objects distinctively. As explained in \autoref{sec:modelarch} object $ i $'s $ c $-th entry (and the connected weights and lower layers) will be updated, as long as this object produces the strongest signal in class $ c $ among all objects in the input frame $ I $.
+From our understanding, this algorithm can only work well under two assumptions: (1) there exist at least one relevant object in the frame (2) the detected objects are not relevant to other action classes.
+To elaborate this issue, consider we have detected two object regions containing "bow" and "green arena floor" in a frame from "Archery" action class.
+Assume this frame is correctly classified, according to \autoref{eq:softmaxloss} a \textit{positive} gradient will be passed to all other classes to \textit{suppress} the corresponding classification signal.
+However, since "green arena floor" is the most representative region for classes such as "TennisSwing", it will be forced to decrease its response for "TennisSwing", although in reality it is positively contributive to this class.
+\end{enumerate}
+\begin{table}[h]
+\centering
+\pgfplotstabletypeset[
+assume math mode,
+multiply by={100},
+%outfile={tables/fusion_table.tex},
+col sep=comma,
+font=\small,
+columns={Stream,S,P,twonets,SP,SPO},
+columns/Stream/.style={column name={mAcc(\%)}, reset styles},
+columns/twonets/.append style={column name={S+P\newline(two nets)},
+column type={M{\widthof{(two losses)}}},
+},
+columns/twoloss/.append style={column name={S+P\newline(two losses)},
+column type={M{\widthof{(two losses)}}},
+},
+columns/SP/.append style={column name={S+P (jointly)},
+column type={M{\widthof{(two losses)}}},
+},
+columns/SPO/.append style={column name={S+P+O (jointly)},
+column type={M{\widthof{(two losses)}}|}
+},
+every row 0 column 4/.style={postproc cell content/.append style={@cell content/.add={\bfseries}{}}},
+every row 1 column 3/.style={postproc cell content/.append style={@cell content/.add={\bfseries}{}}},
+]{data/architecture.dat}
+\caption[Benefit of integrating explicit semantic structure]{Integrating of explicit person cue (P) additionally to scene (S) is beneficial for both spatial and temporal streams. The contribution of object cue is marginal. Our proposed architecture (joint) is profitable in spatial net.}\label{tab:channels}
+\end{table}
+
+\section{Fusion Methods}\label{sec:evalfusion}
+From the previous section, we have learned that introducing person channel to action recognition effectively increases classification accuracy.
+In this section we investigate various fusion methods described in \autoref{sec:fusion} so as to maximize the inter-channel complementary power.
+Considering training effort, all experiments are conducted using spatial net on split1 of UCF101 dataset.
+
+The evaluation results are listed in \autoref{tab:fusion}. 
+
+First of all, opposed to our initial expectation, \ul{max fusion behaves considerably inadequately among all fusion variants}.
+We believe this is due to the fact that since max operation only selectively updates the stronger channel (see \autoref{sec:fusion}), it requires both channels to remain balanced in order to train all channels equally. 
+During training if one channel appears to be stronger than the other, max would keep reinforcing the same channel, hence tilting the balance even further.
+%This is comparable to MIL's sensitivity to initialization. \REFR
+%In our case, person channel is noisier due to imperfect person detections, it usually tends to be weaker than scene channel during training.
+%In fact this hypothesis aligns with our experiment results. In \REFR, we evaluate the performance of individual channels using the pre-merge classification scores (we show 15 randomly selected classes for visibility). 
+%As can be seen, two channels exhibit obvious performance discrepancy.
+
+Secondly from \autoref{tab:fusion} we also see that \ul{multiloss fusion variants yield inferior results} than single-loss methods (except max).
+While multiloss performs well in jointly train a shared model for different tasks (e.g. regression and classification in Fast-RCNN \cite{girshick2015fast}) and dataset augmentation as in \cite{simonyan2014two}, this scheme cannot sufficiently leverage the joint contribution from person and scene cues. 
+According to our analysis, there are two possible reasons. 
+\begin{enumerate}
+\item Unlike the aforementioned examples, where each sub-task is relatively independent, action recognition via different semantic cues are much stronger interplay, therefore sharing the same loss (thus a much similar parameter update in fc layers) could be beneficial for both channels; 
+\item Since scene region pooling always includes person region pooling and since person bounding boxes can contain noisy inputs, combining the classification scores helps recover individual input noise thus increase the robustness of the system.
+\end{enumerate}
+
+Lastly, as is shown in \autoref{tab:fusion} the two \ul{weighted fusion methods do not bring substantial improvement}.
+We think this is because since during DNN training models always overfit to training data, the inter-class confusion as well as relative cue importance cannot reflect the true distribution.
+Hence, weighting classification scores could not induce further performance boost. 
+On contrary, increasing the total number of model parameters could lead to even severe overfitting.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|*{3}{c}*{4}{P{\widthof{(max test)}}}|}
+\hline
+Fusion & max & sum & weighted & cross weighted & multiloss (sum test) & multiloss (max test)& multiloss+\\
+\hline
+ Avg Acc.(\%) & $78.95$ & $\textbf{80.46}$ & $79.77$ & $80.20$ & $ 79.15 $ & $ 79.03 $ & $  78.91 $\\
+\hline
+\end{tabular}
+\caption[Evaluation of Fusion Methods]{Exploration of fusion methods using scene and person cues for spatial net on UCF101. Sum fusion outperforms other fusion methods.}\label{tab:fusion}
+\end{table}
+
+Based on previous empirical study, we are ready to build up our final action recognition architecture: sum-fused model with semantic channels "Scene" and "Person".
+
+The final results on all 3 splits are summarized in \autoref{tab:splits}.
+\begin{table}[h]
+\centering
+\begin {tabular}{|M{\widthof{(Temp P+S)}}|cc|cc|cc|cc|}
+\hline mAcc (\%) & \multicolumn {2}{c|}{Split1} & \multicolumn {2}{c|}{Split2} & \multicolumn {2}{c|}{Split3} & \multicolumn {2}{c|}{Avg}\\ 
+Stream & Baseline & Ours & Baseline & Ours & Baseline & Ours & Baseline & Ours\\\hline %
+Spatial& 79.42 &\textbf{80.46} & \textbf{77.14} &76.53 & 77.25 &\textbf{77.97}&77.93&\textbf{78.32}\\
+\hline
+Temporal (P) & 85.27 &\textbf{87.02} & 88.13 & \textbf{89.00} & 86.96 & \textbf{88.86} &86.79&\textbf{88.29}\\\hline
+Temporal (P+S) & 85.27 &\textbf{87.63} & 88.13 & \textbf{89.33} & 86.96 & \textbf{88.36} &86.79&\textbf{88.48}\\
+\hline %
+Two Stream & 90.98 &\textbf{92.75} & 91.45 & \textbf{92.14} & 91.05 &\textbf{92.91}&91.15& \textbf{92.60}\\\hline
+Two Stream (Temp P+S) & 90.98 &\textbf{92.55} & 91.45 & \textbf{91.98} & 91.05 &\textbf{92.36}&91.15& \textbf{92.30}\\
+\hline %
+\end {tabular}%
+\caption[3 Splits Performance]{Based on the previous empirical study, we propose using ``scene'' + ``person'' (P+S) model architecture for spatial and temporal network. We compare our proposed model with baseline over three splits on the UCF101 dataset, whereas baseline is the in-house implementation of two-stream CNNs. Two Stream results are yielded from summing spatial and temporal classification scores using weight $ 1:3 $.}
+\label{tab:splits}
+\end{table}
+\section{ROI Quality}
+In this section we study the effect of the person detection quality on the model performance.
+
+For this purpose, we focus on the annotated video dataset, JHMDB \cite{jhuang2013towards}, and evaluate the spatial S+P model using (1) person ROIs from raw Faster-RCNN object detector, (2) filtered actor ROIs as described in \autoref{sec:humantrack} and (3) ground truth person ROIs. 
+
+JHMDB is created from HMDB \cite{Kuehne11}. It is a fully annotated video dataset, which consists of 928 trimmed video clips from 21 action classes. These classes are mainly single-actor action classes,
+
+As is shown in \autoref{tbl:jhmdb} the quality of extracted person ROIs directly affects accuracy for action recognition.
+For JHMDB dataset (mostly single person action), even raw detection results suffices to bring in an evident improvement; futhermore On the other hand, our filtered person ROIs are able to generate near groundtruth performance. This suggest that our method is robust against suboptimal ROI extraction.
+\begin{table}\centering
+\pgfplotstabletypeset[col sep=comma,
+assume math mode,
+multiply by={100},
+every first column/.append style={reset styles, string type, column name={}},
+]{data/jhmdb.dat}
+\caption{Accuracy on JHMDB (split 1) using person ROIs of different quality. Similar as in UCF101, baseline refers to the inhouse trained model using solely ``scene'' channel.} \label{tbl:jhmdb}
+\end{table}
+
+\section{Action Categories}\label{sec:categories}
+In this section, we return to the action class categorization (\autoref{fig:categories}) proposed in \autoref{chap:intro} that gave incentive to this thesis and evaluate the effectiveness of our model with respect to these categories.
+
+Recall that we showed in \autoref{tab:worstucf} the baseline model performs significantly worse in action categories with weak dependence on scene.
+In our analysis earlier, this could be caused by the inefficiency of conventional method in autonomously learning to abstract the most discriminant semantic information from complex context.
+This becomes a much severe issue when the dataset inhabits small variance, as deep neural networks easily overfit to unrelated information.
+
+Our proposed structure tackles this issue by providing explicit semantic structures.
+By design, it should be particularly useful for scene-independent classes.
+In this regard, we evaluate our model category-wise with respect to the baseline (scene only).
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+group style={
+group size=2 by 1,
+vertical sep=3cm,
+y descriptions at=edge left,
+x descriptions at=edge bottom
+},
+ylabel={Accuracy (\%)},
+height=0.5\linewidth,width=0.5\linewidth,
+enlarge y limits=false,
+enlarge x limits=0.15,
+ybar=0,
+ymin=60,
+ymax=95,
+xticklabels from table={\mapcatedat}{category},
+grid=major,
+xtick=data,% crucial line for the xticklabels directive
+legend columns=-1,
+legend style={at={(0.5,-0.2)},anchor=north},
+]
+%SPATIAL SPLIT1 DIFFERENT ARCHITECTURE
+\nextgroupplot[bar width=8,
+title={Spatial Split1}
+]
+\addplot[Red,fill] table [
+unbounded coords=jump,
+legend pos=south east,
+x=id,
+y expr=\thisrow{S+P1}*100
+]{\mapcatedat};
+\addplot[ForestGreen,fill] table [
+unbounded coords=jump,
+x=id,
+y expr=\thisrow{S+P+O1}*100
+]{\mapcatedat};    
+\addplot[pattern=north east lines] table [
+unbounded coords=jump,
+x=id,
+y expr=\thisrow{baseline1}*100
+]{\mapcatedat};
+\legend{P+S,P+S+O,baseline};
+%FLOW SPLIT1 DIFFERENT ARCHITECTURE
+\nextgroupplot[bar width=8,
+title={Temporal Split1}]
+\addplot[Red,pattern=dots, pattern color=Red] table [
+x=id,
+y expr=\thisrow{flowP1}*100,
+]{\mapcatedat};
+\addplot[Red,fill] table [
+x=id,
+y expr=100*\thisrow{flowS+P1}
+]{\mapcatedat};
+\addplot[pattern=north east lines] table [
+x=id,
+y expr=100*\thisrow{flowS1}
+]{\mapcatedat};
+\legend{P, P+S, baseline};
+\end{groupplot}
+\end{tikzpicture}
+\caption[Category Performance]{Model performance evaluated according to different action categories on spatial stream (left) and flow stream (right). By integrating person cue, the performance of the originally weakest action category (\textit{motion only, P}) is evidently enhanced.}\label{fig:evalcategory}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}
+\begin{groupplot}[
+group style={
+xlabels at=edge bottom,
+ylabels at=edge left,
+xticklabels at=edge bottom,
+yticklabels at=edge left,
+group size=1 by 2,
+vertical sep=5cm},
+height=0.5\linewidth,width=\linewidth,
+xtick=data,% crucial line for the xticklabels directive
+legend pos=south east,
+xticklabel style={rotate=90, anchor=east, font=\scriptsize},
+grid=major,
+ymin=-20,
+ymax=25,
+ylabel={Accuracy (\%)},
+xlabel={Action Classes},
+enlarge x limits=0.02,
+ybar,
+]
+%SPATIAL
+\nextgroupplot[
+xticklabels from table={\spatialgains}{name},
+title={>5\% Increase/Decrease (Spatial)},
+]
+%TEMPORAL
+\addplot table[x=id,y expr=\thisrow{gain}*100] {\spatialgains};
+\nextgroupplot[
+xticklabels from table={\temporalgains}{name},
+title={>5\% Increase/Decrease (Temporal)},
+]
+\addplot table[x=id,y expr=\thisrow{gain}*100] {\temporalgains};
+\end{groupplot}
+\end{tikzpicture}
+\caption[$ >5\% $ Improvements and Delines]{Classes with $ >5\% $ performance gain and decline in spatial and temporal using our proposed network (P+S).}\label{fig:top-10}
+\end{figure}
+
+\autoref{fig:evalcategory} compares the per-category mean classification accuracy on split1 using different combinations of cues (we fix fusion method to be sum fusion, as it is the best performing one from the discussion in \autoref{sec:fusion}).
+In \autoref{fig:top-10} we show the 10 most improved and most reduced action classes using our method compared to baseline.
+
+To begin with, it should be noticed with increasing importance of scene, classification accuracy shows a clear rising trend both in spatial and temporal nets, which justifies our hypothesis that \ul{the conventional semantic-indifferent methods is sensitive to uninformative variability in scene channel}. 
+
+\paragraph{Person Channel} We first focus on the effect of person cue.
+As is shown in \autoref{fig:evalcategory}, models with separate person channel introduce \ul{significant performance boost in \textit{P} category for both spatial and flow nets.}
+This proves that \ul{the integration of person cue is able to reduce the interference from scene channel.}
+
+Interestingly, an equally large improvement can be observed in \textit{P-S} category.
+A careful examination over change of class-accuracies suggests that this improvement is mainly induced by action classes in similar scenes, for instance "FrontCrawl" vs "BreastStroke", "CricketBowling" vs "CricketShot" (ref \autoref{fig:top-10}).
+This indicates, \ul{the utilization of person bounding boxes provides more refined pooling regions localizing the actual actions, which enables the identification of more sophisticated differences between similar actions}.
+
+While for spatial net the performance gain induced becomes less decisive in \textit{P-O} and \textit{P-O-S} categories, it remains striking for temporal net, suggesting that \ul{the person cue is especially beneficial for temporal net}.
+This agrees with the conclusion we drew in \autoref{sec:cues}, namely for motion domain person is the dominating cue for successful action recognition, while for appearance domain the whole scene plays a more decisive role.
+
+\paragraph{Object Channel} On the other hand, the effect of object channel is not definite.
+As we can see from \autoref{fig:evalcategory}, although the merged result improves the \textit{P} category by a good margin ($ 2.06\% $ in \autoref{fig:evalcategory}), this is in fact induced by person cue.
+In the remaining categories, object channel approximately aligns with scene channel, which confirms our assertion in \autoref{sec:cues}.
+
+\paragraph{Complementarity}Furthermore, \autoref{fig:evalpschannel} depicts another noteworthy point.
+In this figure, we investigate the performance of individual channels \textit{before} sum merging and their merged result in each action category.
+As we can see, person channel outperforms scene channel in most action categories.
+As the scene becomes more indicative, the advantage of person channel gradually resides until it is overtaken in \textit{P-O-S} category, where the scene is overwhelmingly indicative.
+This trends confirms our action categorization.
+At the same time, it implies that \ul{when explicitly decomposed either channel is able to unfold its classification strength in its own ``specialization''}.
+
+Moreover, as is black plot in \autoref{fig:evalpschannel} shows, the merged results either align with (in \textit{P-O}, \textit{P-S} and \textit{P-O-S} categories) or evidently is boosted (in \textit{P} category) by the stronger channel.
+This implies that \ul{our proposed model is able to exploit the strength from both semantic channels in an effective and complementary way}.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+group style={
+	group name=synergy,
+	group size=2 by 1,
+	vertical sep=3cm,
+	y descriptions at=edge left,
+	x descriptions at=edge bottom
+},
+height=0.5\linewidth,width=0.5\linewidth,
+enlarge y limits=false,
+enlarge x limits=0.15,
+ybar=0,
+ymin=60,
+ymax=95,
+xticklabels from table={\pschanneldat}{category},
+grid=major,
+xtick=data,% crucial line for the xticklabels directive
+legend columns=-1,
+legend style={at={(0.5,-0.1)},anchor=north},
+ylabel={Accuracy (\%)},
+]
+\nextgroupplot[
+title={Channel Accuracy in P+S Model (Spatial)},
+xtick=data,
+]
+\addplot[Red, fill] table[y expr=\thisrow{P}*100,x=id] {\pschanneldat};\label{plt:person}
+\addplot[Cerulean, fill] table[y expr=\thisrow{S}*100,x=id] {\pschanneldat};\label{plt:scene}
+\addplot[black, fill] table[y expr=\thisrow{S+P1}*100,x=id] {\mapcatedat};\label{plt:merged}
+\nextgroupplot[
+title={Channel Accuracy in P+S Model (Temporal)},
+xtick=data,
+]
+\addplot[Red, fill] table[y expr=\thisrow{flowP}*100,x=id] {\pschanneldat};
+\addplot[Cerulean, fill] table[y expr=\thisrow{flowS}*100,x=id] {\pschanneldat};
+\addplot[black, fill] table[y expr=\thisrow{flowS+P1}*100,x=id] {\mapcatedat};
+\end{groupplot}
+\path (synergy c1r1.west|-current bounding box.south)--
+coordinate(legendpos)
+(synergy c2r1.east|-current bounding box.south);
+\matrix[
+font=\small,
+matrix of nodes,
+anchor=south,
+draw,
+inner sep=0.2em,
+draw
+]at([yshift=-4ex]legendpos)
+{
+	\ref{plt:person}& Person&[5pt]
+	\ref{plt:scene}& Scene&[5pt]
+	\ref{plt:merged}& Fused (sum)\\};
+\end{tikzpicture}\caption[Single-Channel Performance in integrated model structure]{Performance from individual channels before merging unit in spatial network with sum-fused person and scene channels. The relative performance discrepancy echoes our action class categorization. The merged aligns with the stronger channel, showing the complementary effects of our model.}\label{fig:evalpschannel}
+\end{figure}
+
+\section{Comparison with State-of-the-art}\label{sec:comparison}
+Finally we compare our proposed approach to other state-of-the-art methods on UCF101 dataset. 
+
+The results are summarized in \autoref{tab:state-of-the-art}, where we compare our result with both traditional approaches such as improved trajectories (iDTs), and deep learning representations, such as Two Stream and Deep Two Stream.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{|c|cc*{3}{P{\widthof{TwoStream}}}c|}%
+\hline 
+Method &iDT + FV \cite{wang2013action} & C3D \cite{tran2015learning}  & TwoStream \cite{simonyan2014two} &  TwoStream \cite{simonyan2014two} + LSTM \cite{yue2015beyond} & Deep TwoStream \cite{wang2015towards} & Ours\\\hline %
+Avg.Acc (\%) &$85.9$& $ 85.2 $ & $88.0$&$88.6$&$91.4$&$\textbf{92.6}$\\%
+\hline %
+\end {tabular}
+\caption{Comparison with the state-of-the-art methods on the UCF101 dataset.}
+\label{tab:state-of-the-art}
+\end{table}

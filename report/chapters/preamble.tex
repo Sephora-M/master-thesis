@@ -1,0 +1,99 @@
+% !TEX root = ../thesis.tex
+\graphicspath{{figures/}}
+\newcommand*{\TODO}{\mbox{\large\bf TO DO}}
+\newcommand*{\REFR}{\mbox{\large\bf REFR}}
+\newcommand*{\x}{\mathbf{x}}
+\newcommand*{\w}{\mathbf{w}}
+\renewcommand*{\v}{\mathbf{v}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\wrt}{d\,}
+\newcommand*\derivative[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand*\rfrac[2]{{}^{#1}\!/_{#2}}%running fraction with slash - requires math mode.
+%  Terminates current page and paragraph, makes sure next page starts on
+%  an odd-number, and generates a completely blank page, without page markers,
+%  if necessary.
+\newcommand{\clearemptydoublepage}{\newpage{\pagestyle{empty}\cleardoublepage}}
+
+% svg
+\makeatletter
+\g@addto@macro\@verbatim\small
+\makeatother 
+
+\newcommand{\executeiffilenewer}[3]{%
+ \ifnum\pdfstrcmp{\pdffilemoddate{#1}}%
+ {\pdffilemoddate{#2}}>0%
+ {\immediate\write18{#3}}\fi%
+}
+
+\newcommand{\includesvg}[1]{%
+ \executeiffilenewer{#1.svg}{#1.pdf}%
+ {inkscape -z -D --file=#1.svg %
+ --export-pdf=#1.pdf --export-latex}%
+ \input{#1.pdf_tex}%
+}
+\newcommand{\algorithmautorefname}{Algorithm}
+\algnewcommand\Continue{\State\textbf{continue}}
+\algnewcommand\Break{\State\textbf{break}}
+\makeatletter
+\algnewcommand{\NewLine}{\Statex \hskip\ALG@thistlm}
+\algnewcommand{\LineComment}[1]{\Statex \hskip\ALG@thistlm \(\triangleright\) #1}
+\makeatother
+
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+% plots
+\pgfplotsset{
+compat=1.5,
+every tick label/.append style={font=\footnotesize}, 
+every legend/.append style={font=\footnotesize},
+enlargelimits=false,
+every label/.append style={
+/pgf/number format/fixed,
+/pgf/number format/precision=2
+},
+scaled y ticks=false,
+/pgfplots/ybar legend/.style={
+/pgfplots/legend image code/.code={%
+\draw[##1, bar width=3pt,yshift=-0.2em,bar shift=0pt]
+plot coordinates {(0cm,0.5em)};},
+},
+every axis title/.append style={font=\small},
+every axis label/.append style={font=\footnotesize},
+unbounded coords=jump,
+group style={x descriptions at=edge bottom,
+y descriptions at=edge left},
+}
+
+\pgfplotstableset{% global config, for example in the preamble
+% these columns/<colname>/.style={<options>} things define a style
+% which applies to <colname> only.
+empty cells with={--}, % replace empty cells with ’--’
+every head row/.style={before row=\hline,after row=\hline},
+every last row/.style={after row=\hline},
+precision=2,fixed zerofill,fixed,
+%column type/.add={|}{},% results in ’|c’,
+every first column/.style={string type, column type/.add={|}{|}},
+every last column/.style={
+column type/.add={}{|}
+},
+}
+% multicol supertabular
+\newcount\n
+\n=0
+\def\tablebody{}
+\makeatletter
+\loop\ifnum\n<300
+        \advance\n by1
+        \protected@edef\tablebody{\tablebody
+                \textbf{\number\n.}&
+                \hfill T\hfill\hfill F\hfill\hskip0pt\endgraf
+                \vskip.5\baselineskip
+                \color@begingroup
+                \color{black!20}
+                \hrule height3ex
+                \color@endgroup
+                \tabularnewline
+        }
+\repeat
+\makeatother
