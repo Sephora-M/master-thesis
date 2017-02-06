@@ -35,6 +35,8 @@ class SRNN_model(object):
         return:
         """
         self.save_summaries = log_dir is not None
+        if self.save_summaries:
+            print('Writing summaries for Tensorboard')
         num_layers=1
         self.batch_size = batch_size
         self.num_classes = num_classes

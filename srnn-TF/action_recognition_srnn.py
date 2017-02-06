@@ -40,6 +40,7 @@ tf.app.flags.DEFINE_string("data_pickle",None, "optional pickle file containing 
 tf.app.flags.DEFINE_boolean("normalized", False, "Normalized raw joint positionsn")
 tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "models", "Training directory.")
+tf.app.flags.DEFINE_string("log_dir", None, "Training directory.")
 tf.app.flags.DEFINE_string("gpu", "/gpu:0", "GPU to run ")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
@@ -205,16 +206,17 @@ def create_SRNN_model(session, forward_only,log_dir, result_file=None, batch_siz
             model.saver.restore(session, checkpoint.model_checkpoint_path)
         else:
             print("Created model with fresh parameters.")
-            model.train_writer.add_graph(session.graph)
+            if FLAGS.log_dir is not None:
+                model.train_writer.add_graph(session.graph)
             session.run(tf.global_variables_initializer())
     return model
 
 def main(_):
     if not os.path.exists(FLAGS.train_dir):
         os.makedirs(FLAGS.train_dir)
-    log_dir = str(FLAGS.train_dir +'/logs')
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    # log_dir = str(FLAGS.train_dir +'/logs')
+    # if not os.path.exists(log_dir):
+    #     os.makedirs(log_dir)
     result_file = open(FLAGS.train_dir + "/results.txt", 'a+')
 
     if FLAGS.data_pickle is None:
@@ -271,7 +273,7 @@ def main(_):
                     if not FLAGS.GD:
                         print("with Adam Optimizer")
                     result_file.write("with %d units and %d bach-size." % (FLAGS.num_units, FLAGS.batch_size))
-                    model = create_SRNN_model(sess,False,log_dir,result_file)
+                    model = create_SRNN_model(sess,False,FLAGS.log_dir,result_file)
 
                     
 
@@ -303,7 +305,7 @@ def main(_):
                         temp_input_batch = batch[0]
                         st_input_batch = batch[1]
                         target_batch = batch[-1]
-                        if current_step % FLAGS.steps_per_checkpoint == 0:
+                        if current_step % FLAGS.steps_per_checkpoint == 0 and FLAGS.log_dir is not None:
                             _ , step_loss, _, summary = model.step_with_summary(sess,temp_input_batch, st_input_batch, target_batch, False)
                             model.train_writer.add_summary(summary,model.global_step.eval())
                         else:
@@ -369,8 +371,8 @@ def main(_):
                             sys.stdout.flush()
                             train_batch_id =1
                             current_epoch +=1
-
-                    model.train_writer.close()
+                    if FLAGS.log_dir is not None:
+                        model.train_writer.close()
                         # TODO: validation and testing
                     #save model
                     # model.saver.save(sess, checkpoint_path, global_step=model.global_step)
